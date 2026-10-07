@@ -145,7 +145,7 @@ def load_library():
 
 # OpenAI-compatible chat endpoints: (key env var, URL, default model)
 OPENAI_COMPATIBLE = {
-    "deepseek": ("DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-chat"),
+    "deepseek": ("DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-v4-flash"),
     "groq": ("GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile"),
 }
 
@@ -359,6 +359,8 @@ def answer(query, docs, rules):
                     "fallback": None if generated else "extractive (best-matching passage)"}
     if generated:
         trace["llm"]["input"] = doc["body"]  # shown beside the summary so readers can check nothing was added
+        # The model was told to reply with REFUSAL when the passage does not answer; surface that honestly.
+        trace["llm"]["declined"] = generated.startswith(REFUSAL.rstrip("."))
     text = generated or extract(query, doc)
     trace.update(answer=text, source=source_info(doc, by_id))
     trace["audit_id"] = log_audit(query, route, text, doc["id"], conf)
@@ -477,7 +479,7 @@ if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
         sys.exit()
-    load_env(ROOT / ".env")
+    load_env(Path(os.environ.get("ENV_FILE", ROOT / ".env")))  # e.g. a shared workspace .env
     init()
     port = int(os.environ.get("PORT", 8000))
     llm = {"bedrock": "Amazon Bedrock", "deepseek": "DeepSeek", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")

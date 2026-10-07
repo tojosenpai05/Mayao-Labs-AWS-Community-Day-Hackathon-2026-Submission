@@ -400,9 +400,9 @@ button.tile:hover, button.tile:focus-visible { outline: 3px solid var(--lime); o
 <script>
 const PRESET_SETS = {
   library: [
-    ["RAG failure points", "What are the failure points of RAG systems?"],
+    ["Paper: federated retrieval", "What is federated information retrieval?"],
     ["Malaysia adoption gap", "Why is DDMS adoption in Malaysia still low?"],
-    ["From a published paper", "Does better retrieval guarantee better answers?"],
+    ["Paper: does retrieval help?", "Does better retrieval guarantee better answers?"],
     ["Question we can't answer", "What is the work-from-home policy?"],
   ],
 };
@@ -531,8 +531,9 @@ function render(t) {
   const factualHit = t.route === "FACTUAL" && t.rule?.matched;
   const badges = [`<span class="badge ${t.route === "FACTUAL" ? "fact" : "ok"}">${esc(METHOD[t.route])}</span>`];
   if (!t.llm.used) badges.push('<span class="badge ok">No AI used</span>');
-  else badges.push(`<span class="badge ok">AI summary · ${esc(LLM_NAME[t.llm.provider] || "AI")}</span>`);
+  else if (!t.llm.declined) badges.push(`<span class="badge ok">AI summary · ${esc(LLM_NAME[t.llm.provider] || "AI")}</span>`);
   if (t.llm.fallback && !t.refused) badges.push('<span class="badge warn">Quoted from source</span>');
+  if (t.llm.declined) badges.push('<span class="badge bad">AI declined</span>');
   if (t.refused) badges.push('<span class="badge bad">Not answered</span>');
 
   let html = `<div class="badges">${badges.join("")}</div>` + confRow(t, factualHit);
@@ -553,7 +554,15 @@ function render(t) {
     const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>'
       : s.type === "research" ? '<span class="tag int">Research passage</span>' : '<span class="tag">Circular</span>';
     const meta = [s.id, s.page ? `p. ${s.page}` : null, s.dept, s.date].filter(Boolean).map(esc).join(" · ");
-    html += t.llm.used && t.llm.input
+    html += t.llm.declined
+      ? `<div class="refused" style="text-align:left; margin-bottom:14px">
+           <h3>The AI declined: the best passage didn't answer this</h3>
+           <p>The document search found a related passage, but when ${esc(LLM_NAME[t.llm.provider] || "the AI")} read it, it did not contain the answer.
+             Told to answer only from that passage, the AI said so instead of answering from its own memory.</p>
+           <p class="next">Try rephrasing, or open the source file below and read around the passage.</p>
+         </div>
+         <div class="given" style="margin-bottom:14px"><div class="sbs-h">The only text the AI was given</div><p>${esc(t.llm.input)}</p></div>`
+      : t.llm.used && t.llm.input
       ? `<div class="sbs">
            <div><div class="sbs-h">AI summary · ${esc(LLM_NAME[t.llm.provider] || "AI")}</div>
              <p class="answer">${esc(t.answer)}<sup>[1]</sup></p></div>
