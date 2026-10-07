@@ -62,11 +62,14 @@ python3 demo/app.py            # http://localhost:8000
 python3 demo/app.py --selftest # checks real files, ranking, refusal, verbatim quotes
 ```
 
-Optional LLM answer generation, either with Amazon Bedrock or with Groq's free tier:
+Optional LLM answer generation with Amazon Bedrock, DeepSeek or Groq's free tier:
 
 ```bash
 # Amazon Bedrock: needs AWS CLI credentials and model access enabled for Claude Haiku 4.5
 LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
+
+# DeepSeek
+DEEPSEEK_API_KEY=your_key python3 demo/app.py
 
 # Groq free tier (no credit card)
 GROQ_API_KEY=your_key python3 demo/app.py

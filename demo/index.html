@@ -411,7 +411,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
-const LLM_NAME = { bedrock: "Bedrock", groq: "Groq" };
+const LLM_NAME = { bedrock: "Bedrock", deepseek: "DeepSeek", groq: "Groq" };
 const START = {
   library: `<p class="empty">Every answer is quoted from a real file in this project, and the file is shown so you can check it.
     Pick an example (keys <kbd>1</kbd>–<kbd>4</kbd>), or drop PDFs into <code>demo/library/</code> and restart to include them.</p>`,

@@ -112,18 +112,25 @@ def load_library():
     return chunks
 
 
+# OpenAI-compatible chat endpoints: (key env var, URL, default model)
+OPENAI_COMPATIBLE = {
+    "deepseek": ("DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-chat"),
+    "groq": ("GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile"),
+}
+
+
 def llm_provider():
     if os.environ.get("LLM_PROVIDER", "").lower() == "bedrock":
         return "bedrock"
-    return "groq" if os.environ.get("GROQ_API_KEY") else None
+    return next((name for name, (env, _, _) in OPENAI_COMPATIBLE.items() if os.environ.get(env)), None)
 
 
 def call_llm(prompt):
     provider = llm_provider()
     if provider == "bedrock":
         return _bedrock(prompt)
-    if provider == "groq":
-        return _groq(prompt)
+    if provider:
+        return _openai_compatible(provider, prompt)
     return None
 
 
@@ -146,15 +153,16 @@ def _bedrock(prompt):
         return None
 
 
-def _groq(prompt):
-    key = os.environ["GROQ_API_KEY"]
+def _openai_compatible(provider, prompt):
+    env, url, default_model = OPENAI_COMPATIBLE[provider]
+    key = os.environ[env]
     body = json.dumps({
-        "model": os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile"),
+        "model": os.environ.get("LLM_MODEL", default_model),
         "temperature": 0,
         "messages": [{"role": "user", "content": prompt}],
     }).encode()
     req = urllib.request.Request(
-        "https://api.groq.com/openai/v1/chat/completions", data=body,
+        url, data=body,
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
                  "User-Agent": "wawasan-demo"})
     try:
@@ -422,7 +430,7 @@ if __name__ == "__main__":
     DOCS = load_library()
     FILES = {d["file"]: ROOT.parent / d["file"] for d in DOCS}
     port = int(os.environ.get("PORT", 8000))
-    llm = {"bedrock": "Amazon Bedrock", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
+    llm = {"bedrock": "Amazon Bedrock", "deepseek": "DeepSeek", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
     print(f"WAWASAN demo: {len(FILES)} files / {len(DOCS)} passages, LLM: {llm}")
     print(f"http://localhost:{port}")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
