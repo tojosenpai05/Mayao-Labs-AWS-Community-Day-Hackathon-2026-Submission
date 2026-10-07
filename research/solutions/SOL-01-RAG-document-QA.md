@@ -74,3 +74,50 @@ Documents (PDF, DOCX, scanned)
 ---
 
 *Content paraphrased for compliance with licensing restrictions.*
+
+---
+
+## Advantages
+
+### ✅ Production-proven at government scale
+Not experimental — Deltek deployed this in production for 30,000+ government contracting clients. The architecture is battle-tested and the failure modes are well-documented (Deakin, 2024).
+
+### ✅ Works on existing document repositories
+No migration required. Point the ingestion pipeline at an S3 bucket, SharePoint, or shared drive and the system indexes what's already there. Agencies don't need to restructure anything.
+
+### ✅ No model retraining
+New documents are added by re-indexing, not by retraining. A policy updated today is searchable today. This is critical for government where circulars and SOPs change regularly.
+
+### ✅ Dramatic measurable improvement over keyword search
+F1 score improvement from 5.45% → 42.21% over baseline (CMU study). Even a basic RAG deployment is a step-change improvement over the manual search most Sarawak agencies currently do.
+
+### ✅ Cites sources on every answer
+Every response references the document it came from. This is the single most important feature for a government audience — every claim is verifiable and defensible.
+
+### ✅ Shortest path to a working demo
+Bedrock Knowledge Bases + S3 + Amplify chat is the most documented, most supported path on AWS. Multiple tutorials, Bedrock console setup wizard, minimal custom code.
+
+---
+
+## Disadvantages
+
+### ❌ Fails silently on outdated or missing documents
+If the corpus contains an outdated circular and the current version was never uploaded, RAG returns the outdated answer confidently. The system doesn't know what it doesn't have. This is Failure Point 1 (FP1) from the Deakin study — the most dangerous failure mode for a government policy context.
+
+### ❌ Dense vector retrieval alone struggles with government language
+Government documents use precise bureaucratic terminology — circular numbers, grade codes, specific legal phrases. Dense embeddings find *semantically similar* content, not *exactly matching* terms. A query about "Grade 41 leave entitlement" may retrieve a document about "officer leave policy" that doesn't contain the specific grade. Must use hybrid BM25 + vector retrieval to mitigate.
+
+### ❌ Temporal/version awareness is not built in
+RAG treats documents as a flat pile. It doesn't know that Circular 7/2024 supersedes Circular 3/2022. Without explicit metadata and version tracking, it may retrieve and cite an outdated document as the current authority. Requires extra engineering to solve.
+
+### ❌ Chunking strategy directly impacts answer quality
+Documents must be split into chunks before indexing. Chunks too small → can't answer multi-part questions. Chunks too large → noise pollutes answers. Getting chunking right for heterogeneous government documents (PDFs, scanned images, Word docs, meeting minutes) requires iteration and is not a one-time setup task.
+
+### ❌ Hallucination risk on absent content
+When a question is related to the document domain but the specific answer isn't in any document, RAG may generate a plausible-sounding fabrication rather than saying "I don't know." Confidence calibration must be explicitly engineered in — it doesn't come for free.
+
+### ❌ Scanned/legacy documents require preprocessing pipeline
+A large portion of Sarawak's historical government documents are scanned PDFs, handwritten notes, or legacy formats. These require OCR (Amazon Textract) preprocessing before they can be indexed. Adds pipeline complexity and processing cost.
+
+### ❌ Needs ongoing maintenance
+Every time a policy changes, the corresponding document must be re-uploaded and re-indexed. If no one owns this process, the corpus goes stale and the system produces outdated answers — recreating the exact problem it was meant to solve.

@@ -94,3 +94,44 @@ For a 4-hour build, implement the pure RAG path first (most of the work). Add qu
 ---
 
 *Content paraphrased for compliance with licensing restrictions.*
+
+---
+
+## Advantages
+
+### ✅ Eliminates the most dangerous failure mode in government AI
+Hallucinating a salary grade or a procurement limit is not just wrong — it's a compliance failure. The hybrid approach routes all deterministic, structured-fact queries through a rule engine that cannot hallucinate. This is the critical trust differentiator for a government audience.
+
+### ✅ "Side-by-side" demo is the most technically convincing moment in a hackathon
+Show pure RAG answering "what is the leave entitlement for Grade 41?" with a confident but wrong answer. Then show hybrid routing giving the correct answer from the rule table. That single demonstration is more persuasive than 10 minutes of explanation.
+
+### ✅ Best research backing of any individual solution
+Three 2025–2026 papers specifically on policy document retrieval (Frontiers in AI, AGORA corpus, arXiv faithfulness study) all support this approach. The evidence base is current and domain-specific.
+
+### ✅ Directly addresses Sarawak SOPs and circulars
+Sarawak government documents are full of structured facts: Grade-based entitlements, procurement limits by department level, deadlines, approval authorities. Every one of these is a query where pure RAG will eventually fail and hybrid routing will always get right.
+
+### ✅ Modular — can be added to any RAG core
+The query classification layer is a lightweight Lambda function sitting in front of the RAG pipeline. It doesn't require rebuilding the RAG system. Any team that has already built SOL-01 can add SOL-05 in roughly an hour.
+
+### ✅ Confidence scoring makes the system self-aware
+The hybrid pipeline produces confidence scores alongside every RAG answer. Low confidence triggers an "I don't have reliable information on this" response rather than a guess. This is not default RAG behaviour — it requires explicit engineering and is a meaningful differentiator.
+
+---
+
+## Disadvantages
+
+### ❌ Rule tables require manual curation and ongoing maintenance
+Someone must extract all structured policy facts from government documents and populate the rule tables in DynamoDB. This is manual work upfront and must be repeated every time a policy changes. If the rule tables go stale, the system produces confidently wrong deterministic answers — worse than a hallucination because it appears authoritative.
+
+### ❌ Query classification is imperfect
+The Lambda classifier decides whether a query is "factual" or "interpretive." Edge cases exist — "what is the general process for approving a procurement above the threshold?" is partly factual, partly interpretive. Misclassification sends a factual query to RAG (where it may hallucinate) or an interpretive query to the rule engine (where it gets no answer). The classifier needs testing and iteration.
+
+### ❌ Adds ~1–2 hours to a hackathon build
+The RAG core is straightforward. The classification layer and rule tables add significant scoped time. A team that underestimates this ends up with an incomplete hybrid and a worse demo than a clean SOL-01 build.
+
+### ❌ DynamoDB rule tables don't scale gracefully to thousands of policy facts
+A pilot with 50 structured facts is manageable. A production system covering every Sarawak state agency's structured policy facts across all departments runs to thousands of entries. Managing this at scale requires a proper admin interface and governance workflow that is well beyond a hackathon scope.
+
+### ❌ Doesn't solve the silo or institutional memory problems
+Like SOL-01, this solution improves retrieval quality but doesn't address why documents are fragmented across systems, or why knowledge held by experienced staff isn't captured anywhere. It's a better search engine, not a knowledge management system.

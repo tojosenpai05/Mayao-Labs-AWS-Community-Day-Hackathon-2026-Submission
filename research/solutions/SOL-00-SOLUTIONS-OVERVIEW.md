@@ -81,3 +81,66 @@ Pitch: Frame it as the institutional memory system Sarawak needs — with real r
 - `SOL-04-knowledge-graph-egovernment.md`
 - `SOL-05-hybrid-rag-rule-based-policy.md`
 - `SOL-06-genai-policy-navigation-government.md`
+
+---
+
+## Comparative Advantages & Disadvantages
+
+### Quick-Reference Matrix
+
+| Solution | Top Advantage | Top Disadvantage | Sarawak-Critical Risk |
+|---|---|---|---|
+| SOL-01 RAG Q&A | Proven, fastest core build | Silently returns outdated answers if corpus is stale | Sarawak docs are inconsistently formatted — ingestion quality is unpredictable |
+| SOL-02 Amazon Q Business | Fastest full setup, zero code | Judges see it as product config, not engineering | BM language quality lower than custom-tuned alternative |
+| SOL-03 Institutional Memory | Most emotionally resonant pitch; addresses ageing workforce | Requires staff cooperation that may not come | Sarawak's retiring civil servants are the exact target — highest urgency, hardest to capture |
+| SOL-04 Knowledge Graph | Only structural fix to silo problem | 3–5 days to implement, not 4 hours | Strong long-term fit but zero short-term viability |
+| SOL-05 Hybrid RAG + Rules | Eliminates hallucination on policy facts | Rule tables require manual curation and go stale | Sarawak SOPs full of structured facts — this is the highest-accuracy path |
+| SOL-06 GenAI Policy Navigator | Addresses all 6 pain points; best pitch narrative | Full governance stack too complex for 4 hours | Document corpus quality is everything — GIGO applies |
+
+---
+
+### Advantages — Ranked Across All Solutions
+
+| Rank | Advantage | Found In |
+|---|---|---|
+| 1 | Production-proven at government scale | SOL-01 |
+| 2 | Addresses all 6 pain points | SOL-06 |
+| 3 | Eliminates hallucination on structured facts | SOL-05 |
+| 4 | Most emotionally resonant pitch / Sarawak demographic fit | SOL-03 |
+| 5 | Fastest time-to-demo | SOL-02 |
+| 6 | Solves structural silo problem permanently | SOL-04 |
+| 7 | Governance built in from day one | SOL-06 |
+| 8 | Non-destructive — no migration needed | SOL-01, SOL-04 |
+| 9 | Gets more valuable over time | SOL-03 |
+| 10 | Multilingual by design | SOL-06 |
+
+---
+
+### Disadvantages — Ranked by Severity for Sarawak Context
+
+| Rank | Disadvantage | Found In | Severity |
+|---|---|---|---|
+| 1 | Silently returns outdated answers if corpus is stale | SOL-01, SOL-06 | 🔴 Critical |
+| 2 | Rule tables require manual curation and go stale | SOL-05 | 🔴 Critical |
+| 3 | Requires staff cooperation for knowledge capture | SOL-03 | 🔴 Critical |
+| 4 | Change management not solved by product alone | SOL-06, SOL-02 | 🔴 Critical |
+| 5 | Too complex to build in hackathon timeframe | SOL-04 | 🟠 High |
+| 6 | Vendor lock-in to AWS ecosystem | SOL-02, SOL-06 | 🟠 High |
+| 7 | BM language quality lower in off-the-shelf models | SOL-02, SOL-01 | 🟠 High |
+| 8 | Hallucination on structured facts (pure RAG) | SOL-01, SOL-02 | 🟠 High |
+| 9 | Hard to explain to non-technical judges | SOL-04, SOL-05 | 🟡 Medium |
+| 10 | Data sovereignty concerns with cloud deployment | All | 🟡 Medium |
+
+---
+
+### The Most Honest Assessment
+
+Every solution has a version of the same two core disadvantages:
+
+**Disadvantage A — The corpus quality problem**
+Every AI retrieval system is only as good as the documents fed into it. Sarawak's historical government documents are inconsistently formatted, partially scanned, and not uniformly structured. This is not a software problem — it's a decades-old records management problem. No solution here fixes that; they all require clean, current documents to work well.
+
+**Disadvantage B — The adoption problem**
+Malaysia's DDMS history proves that even a good system deployed by mandate will fail if civil servants don't trust it and aren't trained to use it. The best product in the world cannot solve a change management and culture problem. Every solution here needs a rollout strategy, a pilot champion, and a feedback loop — none of which are in scope for a 4-hour hackathon.
+
+These two root disadvantages apply to every solution. The solutions differ only in how well they mitigate them — not in whether they exist.

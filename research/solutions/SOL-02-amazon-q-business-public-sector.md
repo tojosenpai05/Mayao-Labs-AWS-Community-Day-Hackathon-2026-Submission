@@ -91,3 +91,50 @@ The result is a working demo of intelligent government document Q&A in under 4 h
 ---
 
 *Content paraphrased for compliance with licensing restrictions.*
+
+---
+
+## Advantages
+
+### ✅ Fastest time-to-demo of any solution
+40+ pre-built connectors mean you can connect SharePoint, Google Drive, S3, and Confluence in a single configuration step. No ingestion pipeline to build from scratch. A working demo is achievable in under 2 hours.
+
+### ✅ Automatic sync with source systems
+When a document is updated in SharePoint or S3, Q Business reflects it automatically. No manual re-indexing. The source-of-truth problem is partially solved by design.
+
+### ✅ Document-level access control inherited automatically
+Q Business respects and enforces existing permissions from the connected systems. If a user doesn't have access to a document in SharePoint, they can't get it via Q Business either. No separate access control layer to build.
+
+### ✅ Enterprise compliance out of the box
+HIPAA, PCI, ISO42001 compliance inherited from Amazon Bedrock. All data stays within the AWS region — critical for Sarawak government data sovereignty requirements.
+
+### ✅ Zero learning curve for civil servants
+Natural language chat interface. Staff ask questions in their own words, in their own language. No new filing taxonomy to learn, no search syntax to master. This directly addresses the adoption failure pattern seen in Malaysia's DDMS history.
+
+### ✅ Scales without infrastructure management
+Handles peak demand (budget season, policy rollouts) automatically. AWS manages capacity, model updates, and backend infrastructure.
+
+---
+
+## Disadvantages
+
+### ❌ "Product configuration" not "engineering" — weaker hackathon position
+A judge who understands AWS will recognise that the core of this solution is setup and configuration, not custom engineering. In a hackathon judged on innovation and technical depth, this is a credibility risk. The team appears to be using a product rather than building one.
+
+### ❌ No control over the underlying retrieval behaviour
+Q Business is a black box — teams cannot tune chunking strategy, retrieval ranking, confidence scoring, or routing logic. When it returns a wrong answer, there is limited ability to diagnose or fix the root cause.
+
+### ❌ Does not solve the hallucination-on-structured-facts problem
+Q Business uses standard RAG under the hood. It does not have a rule-based routing layer for deterministic policy facts. A query like "what is the maximum leave days for Grade 41?" may get a semantically plausible but factually wrong answer.
+
+### ❌ Vendor lock-in
+The system is entirely dependent on Amazon Q Business pricing, API availability, and feature roadmap. If AWS changes pricing or deprecates a feature, migrating is complex.
+
+### ❌ No institutional memory capture
+Q Business indexes documents — it does not capture the tacit knowledge held by experienced staff. It can answer "what does the SOP say?" but not "why was this SOP written this way and what was the original intent?". The institutional memory gap remains unaddressed.
+
+### ❌ Requires full AWS account setup and IAM configuration
+Not trivial for a hackathon environment. IAM roles, connector permissions, and data source configurations take setup time that a bespoke RAG pipeline can avoid by working directly with local files.
+
+### ❌ Limited customisation for Sarawak-specific language
+Q Business's language support is primarily English-optimised. Bahasa Malaysia queries will work but may produce lower quality results than a custom embedding model tuned for BM government language. No path to add Iban or other local language support.

@@ -101,3 +101,50 @@ That 3-question flow demonstrates the core value prop, version awareness, and ou
 ---
 
 *Content paraphrased for compliance with licensing restrictions.*
+
+---
+
+## Advantages
+
+### ✅ Directly addresses all 6 pain factors simultaneously
+The only single solution that has a design response to every pain factor identified in the research: retrieval (RAG core), version confusion (version awareness feature), silos (closed corpus over multi-source docs), knowledge loss (captures rationale), adoption (natural language UI), slow decisions (instant cited answers).
+
+### ✅ Governance built in from day one
+Bedrock Guardrails, query audit log, role-based access, closed corpus, and source citations are not add-ons — they're core design requirements. This means a government agency can adopt the product without needing to write a separate AI governance policy around it. The product is the governance policy made operational.
+
+### ✅ Perfect narrative alignment with the hackathon problem statement
+The problem statement says "transform organizational knowledge into an intelligent, searchable resource." SOL-06 is the most literal and complete implementation of that sentence. Judges who wrote the brief will recognise the alignment immediately.
+
+### ✅ The "I don't know" feature is a trust-building superpower
+Every other AI tool confidently answers every question. A tool that says "I don't have a current document on this topic — please consult your department head" is immediately more trustworthy to a government officer than one that always provides an answer. This is a counterintuitive but powerful differentiator.
+
+### ✅ Sarawak's internal AI gap is the precise niche
+Dayang handles citizen-facing queries. DDMS handles document filing. Nothing handles intelligent internal retrieval for civil servants. SOL-06 fills exactly this gap — and because it's Sarawak-specific (BM/EN, closed corpus of Sarawak state docs, aligned with SDEB 2030), it has no direct competitor in this market.
+
+### ✅ Every feature answers a specific government objection
+"How do we know it's accurate?" → Citations. "What if it makes something up?" → I-don't-know detection + Guardrails. "Can junior staff access classified documents?" → Role-based access. "How do we audit what it's been asked?" → Query log. Each feature is a pre-answered objection in the 5-minute pitch.
+
+### ✅ Multilingual support is differentiating in the Malaysian context
+No national Malaysian government AI tool currently supports BM/English queries with equivalent quality. Adding Bahasa Malaysia as a first-class query language (not a translation afterthought) is a genuine product differentiator for a Sarawak deployment.
+
+---
+
+## Disadvantages
+
+### ❌ Full governance stack is complex to build in 4 hours
+Bedrock Guardrails + Cognito (role-based access) + DynamoDB audit log + version metadata on every document + multilingual embeddings is 6–8 hours of full-stack work. The core chat interface is fast; the governance layer takes time. Risk of a demo that pitches features the team hasn't finished building.
+
+### ❌ "Policy change propagation" is harder than it sounds
+The feature that alerts "Circular X has been updated — these 4 SOPs reference it" requires either a knowledge graph (SOL-04 complexity) or explicit metadata tagging of every document relationship. Neither is trivial. This feature should be pitched as roadmap, not demoed as live.
+
+### ❌ Version awareness requires document metadata discipline
+The system can only know that Circular 7/2024 supersedes Circular 3/2022 if that relationship is expressed in document metadata. If documents are uploaded to S3 without structured metadata, the version awareness feature doesn't work. Government agencies are not known for metadata discipline.
+
+### ❌ Depends on corpus quality to deliver on its promise
+The product's credibility is entirely tied to the quality and currency of its document corpus. If the uploaded documents are outdated, the system returns outdated cited answers — which is arguably worse than no answer because it appears authoritative. Document governance is a product requirement, not an IT problem.
+
+### ❌ Multilingual embedding quality degrades for formal government language
+Current multilingual embedding models perform well on conversational BM/English but may underperform on formal bureaucratic Bahasa Malaysia — the language of Sarawak circulars and SOPs. Fine-tuning on domain-specific text would help but requires training data that may not be publicly available.
+
+### ❌ Change management remains the hardest problem
+The best-designed product will still fail if civil servants don't trust it or don't use it. Malaysia's history shows that government technology adoption requires active change management, not just product quality. The product needs a go-to-market and training strategy alongside its technical architecture — and that's outside the hackathon scope.

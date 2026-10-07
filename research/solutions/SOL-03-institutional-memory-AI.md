@@ -85,3 +85,47 @@ Sarawak's state government is facing the same demographic pressure — fertility
 ---
 
 *Content paraphrased for compliance with licensing restrictions.*
+
+---
+
+## Advantages
+
+### ✅ Captures what no document system can — the "why"
+Formal document systems (DDMS, SharePoint, S3) capture what was decided. Institutional memory systems capture *why* it was decided, what trade-offs were considered, and what contextual factors influenced the outcome. This is irreplaceable knowledge that walks out the door with every retiring civil servant.
+
+### ✅ Directly addresses Sarawak's most urgent demographic risk
+Sarawak's fertility rate dropped from 2.76 to 1.6 between 2001 and 2023. The workforce is ageing and shrinking. Retiring senior civil servants carry decades of irreplaceable institutional knowledge. This is the most Sarawak-specific pain point of all six — and it has no other solution in place.
+
+### ✅ The most emotionally resonant pitch to any audience
+"We lost 20 years of institutional memory overnight when our city clerk retired" (Los Altos Hills case) lands immediately with any government decision-maker. The problem is universally understood, the consequence is viscerally real, and the solution is immediately credible.
+
+### ✅ Gets more valuable over time
+Every knowledge interview, every captured decision rationale, every indexed meeting minute makes the system richer. Unlike a document retrieval system that only reflects what's uploaded today, an institutional memory system compounds in value with every contribution.
+
+### ✅ Creates onboarding value immediately
+New civil servants joining Sarawak agencies can query the system to understand the history behind current policies — not just read them. "Why was this SOP written this way?" becomes an answerable question, dramatically accelerating productive onboarding.
+
+### ✅ Complementary to every other solution
+Institutional memory is a knowledge layer, not a competing retrieval strategy. It enriches whatever retrieval system is used — RAG, Q Business, hybrid — by adding tacit knowledge to the corpus alongside formal documents.
+
+---
+
+## Disadvantages
+
+### ❌ Requires active cooperation from retiring staff
+The most valuable knowledge capture happens through structured interviews or narrated task recordings. This requires time, willingness, and effort from the exact people who are busiest winding down their careers. If cooperation is low, the knowledge capture value is limited.
+
+### ❌ Knowledge interviews are hard to structure consistently
+Unstructured conversations produce uneven, hard-to-index content. A retiring planning officer and a retiring HR officer will narrate very differently. Standardising the capture format without making it feel like a bureaucratic burden is a real product design challenge.
+
+### ❌ Full implementation scope exceeds a hackathon build
+The complete system — capture pipeline, transcription, knowledge tagging, graph indexing, query interface — is weeks of work. A 4-hour hackathon can demonstrate the retrieval layer but cannot demonstrate the capture workflow in any meaningful depth.
+
+### ❌ Tacit knowledge is inherently ambiguous
+Unlike a policy document with a clear authority, an individual's remembered rationale for a decision may be subjective, partial, or unconsciously biased. The system must handle conflicting accounts of the same decision gracefully — and there's no clean solution to this.
+
+### ❌ High data sensitivity
+Knowledge interviews capturing why specific decisions were made — especially controversial ones — are politically sensitive. An audio recording of a department head explaining a procurement decision creates exposure if leaked or subpoenaed. Strong access controls and data governance are mandatory, not optional.
+
+### ❌ Weak on real-time retrieval speed
+Institutional memory adds depth and context but doesn't speed up the core document retrieval workflow on its own. A civil servant trying to find the current leave policy quickly doesn't need historical rationale — they need the current document now. This solution solves a different dimension of the problem.
