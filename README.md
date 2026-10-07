@@ -26,6 +26,10 @@ All screenshots show real answers from DeepSeek (`deepseek-v4-flash`) over the r
 
 ![Source file pop-up](demo/screenshots/4-source-file-popup.png)
 
+**"Open original" opens the publisher's PDF itself,** at the cited page. Below is page 4 of that paper, rendered straight from the PDF file; the cited Conclusion is at the bottom right. **"Download"** saves the same file, byte-for-byte identical to the original (checked with SHA-256). The server only serves files that are actually indexed, so these links cannot be used to read anything else on the machine.
+
+![Open original: page 4 of the cited PDF](demo/screenshots/6-open-original-pdf-page4.png)
+
 **When the passage doesn't answer, the AI declines:** for *"What are the failure points of RAG systems?"* the search found the Barnett et al. title page. DeepSeek read it, saw the answer wasn't there, and said so instead of answering from its own memory.
 
 ![AI declined](demo/screenshots/5-ai-declined.png)
