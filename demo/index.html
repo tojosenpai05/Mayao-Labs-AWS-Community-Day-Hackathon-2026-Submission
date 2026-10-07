@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WAWASAN Demo</title>
+<style>
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --ink: #14202e; --muted: #5b6878; --line: #d9dfe7;
+  --accent: #0b6e6e; --accent-soft: #e0f1f0; --fact: #3b4fb8; --fact-soft: #e6e9fa;
+  --bad: #b3261e; --bad-soft: #fbe9e7; --warn: #8a5a00; --warn-soft: #fdf1d6;
+  --idle: #eef1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f151c; --panel: #17202a; --ink: #e6edf3; --muted: #93a1b0; --line: #2a3644;
+    --accent: #3fc1b8; --accent-soft: #123331; --fact: #8f9dff; --fact-soft: #1e2347;
+    --bad: #ff8a80; --bad-soft: #3a1b1a; --warn: #f0c060; --warn-soft: #362a10;
+    --idle: #1d2731;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+header h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
+header p { margin: 4px 0 0; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+section { margin-top: 18px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 10px; }
+
+form { display: flex; gap: 8px; }
+input[type=text] { flex: 1; min-width: 0; padding: 12px 14px; font: inherit; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); }
+.ask { padding: 0 20px; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.presets button { background: var(--bg); color: var(--ink); padding: 6px 10px; font-size: 13px; text-align: left; }
+.presets button b { color: var(--accent); margin-right: 4px; }
+
+/* Pipeline */
+.pipe { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto auto; gap: 14px 26px; }
+.node { position: relative; background: var(--idle); border: 2px solid transparent; border-radius: 10px;
+  padding: 10px; min-height: 74px; transition: all .25s; display: flex; flex-direction: column; justify-content: center; }
+.node .name { font-weight: 650; font-size: 14px; }
+.node .cap { font-size: 12px; color: var(--muted); margin-top: 3px; min-height: 18px; overflow-wrap: anywhere; }
+.node .lane { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
+.node:not(.last)::after { content: "›"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 22px; }
+.span2 { grid-row: 1 / span 2; }
+#n-query { grid-column: 1; } #n-classify { grid-column: 2; }
+#n-rule { grid-column: 3 / span 3; grid-row: 1; }
+#n-retrieve { grid-column: 3; grid-row: 2; } #n-gate { grid-column: 4; grid-row: 2; } #n-llm { grid-column: 5; grid-row: 2; }
+#n-answer { grid-column: 6; } #n-audit { grid-column: 7; }
+.node[data-s=done] { background: var(--accent-soft); border-color: var(--accent); }
+.node[data-s=fact] { background: var(--fact-soft); border-color: var(--fact); }
+.node[data-s=block] { background: var(--bad-soft); border-color: var(--bad); }
+.node[data-s=warn] { background: var(--warn-soft); border-color: var(--warn); }
+.node[data-s=skip] { opacity: .45; border: 2px dashed var(--line); }
+.node[data-s=busy] { border-color: var(--accent); animation: pulse .8s infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { .node { transition: none; } .node[data-s=busy] { animation: none; } }
+
+/* Results */
+.grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; }
+.answer { font-size: 16px; white-space: pre-wrap; margin: 4px 0 12px; }
+.answer.refused { color: var(--bad); font-weight: 600; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 99px;
+  background: var(--idle); color: var(--muted); text-transform: uppercase; }
+.badge.ok { background: var(--accent-soft); color: var(--accent); }
+.badge.fact { background: var(--fact-soft); color: var(--fact); }
+.badge.bad { background: var(--bad-soft); color: var(--bad); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.source { border-top: 1px solid var(--line); padding-top: 10px; font-size: 13px; color: var(--muted); }
+.source .t { color: var(--ink); font-weight: 600; font-size: 14px; }
+.supersede { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--warn); background: var(--warn-soft);
+  color: var(--ink); font-size: 13px; border-radius: 4px; }
+.why { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+.hits { list-style: none; margin: 0; padding: 0; }
+.hits li { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.hits li:last-child { border: 0; }
+.hits .row { display: flex; justify-content: space-between; gap: 8px; }
+.hits .bar { height: 5px; background: var(--accent); border-radius: 3px; margin-top: 4px; }
+.hits li.chosen .id { font-weight: 700; }
+.hits li.old .id, .hits li.old .ttl { text-decoration: line-through; color: var(--muted); }
+.hits li.old .bar { background: var(--line); }
+.tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 4px;
+  background: var(--idle); color: var(--muted); text-transform: uppercase; }
+.tag.int { background: var(--fact-soft); color: var(--fact); }
+.tag.old { background: var(--warn-soft); color: var(--warn); }
+.meter { position: relative; height: 12px; background: var(--idle); border-radius: 6px; margin: 8px 0; }
+.meter i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--accent); }
+.meter i.low { background: var(--bad); }
+.meter b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
+.chips span { display: inline-block; font-size: 12px; padding: 1px 7px; margin: 2px 3px 0 0; border-radius: 4px; }
+.chips .y { background: var(--accent-soft); color: var(--accent); }
+.chips .n { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; }
+.empty { color: var(--muted); font-size: 13px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.scroll { overflow-x: auto; }
+footer { margin-top: 18px; font-size: 13px; color: var(--muted); }
+footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
+
+@media (max-width: 760px) {
+  .pipe { grid-template-columns: 1fr; }
+  .pipe .node { grid-column: 1 !important; grid-row: auto !important; }
+  .node:not(.last)::after { content: "⌄"; right: auto; left: 50%; top: auto; bottom: -21px; transform: translateX(-50%); }
+  .grid2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>WAWASAN</h1>
+    <p>Internal knowledge assistant for Sarawak civil servants: cited answers from policies, circulars and captured institutional memory.</p>
+  </header>
+
+  <section class="panel">
+    <form id="f">
+      <input id="q" type="text" autocomplete="off" placeholder="Ask about leave, procurement, claims, records..." aria-label="Question">
+      <button class="ask" type="submit">Ask</button>
+    </form>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Pipeline</h2>
+    <div class="pipe">
+      <div class="node span2" id="n-query"><span class="name">1 · Query</span><span class="cap"></span></div>
+      <div class="node span2" id="n-classify"><span class="name">2 · Router</span><span class="cap"></span></div>
+      <div class="node" id="n-rule"><span class="lane">FACTUAL LANE</span><span class="name">3 · Rule engine</span><span class="cap"></span></div>
+      <div class="node" id="n-retrieve"><span class="lane">INTERPRETIVE LANE</span><span class="name">3 · BM25 retrieval</span><span class="cap"></span></div>
+      <div class="node" id="n-gate"><span class="name">4 · Confidence gate</span><span class="cap"></span></div>
+      <div class="node" id="n-llm"><span class="name">5 · LLM</span><span class="cap"></span></div>
+      <div class="node span2" id="n-answer"><span class="name">6 · Answer + citation</span><span class="cap"></span></div>
+      <div class="node span2 last" id="n-audit"><span class="name">7 · Audit log</span><span class="cap"></span></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel"><h2>Answer</h2><div id="answer"><p class="empty">Pick a scenario above or ask a question.</p></div></div>
+    <div class="panel">
+      <h2>Retrieval</h2><div id="hits"><p class="empty">No retrieval yet.</p></div>
+      <h2 style="margin-top:16px">Confidence</h2><div id="conf"><p class="empty">No confidence check yet.</p></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Audit log</h2>
+    <div class="scroll"><table><thead><tr><th>#</th><th>Time</th><th>Query</th><th>Route</th><th>Source</th><th>Conf.</th></tr></thead>
+    <tbody id="audit"></tbody></table></div>
+  </section>
+
+  <footer>
+    Running locally with Python stdlib only. Production target on AWS:
+    <code>S3</code> corpus · <code>Lambda</code> router + BM25 · <code>DynamoDB</code> rules + audit · <code>Bedrock</code> LLM.
+  </footer>
+</main>
+
+<script>
+const PRESETS = [
+  ["Deterministic fact", "What is the annual leave entitlement for Grade 41?"],
+  ["Cited answer", "How do I apply for annual leave?"],
+  ["Out-of-corpus refusal", "What is the work-from-home policy?"],
+  ["Version supersession", "What is the direct procurement limit?"],
+  ["Institutional memory", "Why was the procurement threshold raised in 2024?"],
+];
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
+
+function setNode(id, state, cap) {
+  const n = $("#n-" + id);
+  n.dataset.s = state || "";
+  n.querySelector(".cap").textContent = cap || "";
+}
+
+PRESETS.forEach(([label, q], i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.innerHTML = `<b>${i + 1}</b>${esc(label)}`;
+  b.title = q;
+  b.onclick = () => { $("#q").value = q; run(q); };
+  $("#presets").appendChild(b);
+});
+$("#f").onsubmit = (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) run(q); };
+
+let running = false;
+async function run(q) {
+  if (running) return;
+  running = true;
+  STAGES.forEach((s) => setNode(s, "", ""));
+  $("#answer").innerHTML = '<p class="empty">Working...</p>';
+  setNode("query", "done", q.length > 34 ? q.slice(0, 34) + "…" : q);
+  setNode("classify", "busy", "classifying");
+  let t;
+  try {
+    const r = await fetch("/api/query", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+    t = await r.json();
+    if (!r.ok) throw new Error(t.error || r.status);
+  } catch (err) {
+    setNode("classify", "block", "request failed");
+    $("#answer").innerHTML = `<p class="answer refused">Request failed: ${esc(err.message)}</p>`;
+    running = false;
+    return;
+  }
+  await animate(t);
+  render(t);
+  loadAudit();
+  running = false;
+}
+
+async function animate(t) {
+  const step = 380;
+  const factual = t.route === "FACTUAL";
+  setNode("classify", factual ? "fact" : "done", t.route);
+  await sleep(step);
+  if (factual && t.rule?.matched) {
+    setNode("rule", "fact", t.rule.topic);
+    ["retrieve", "gate", "llm"].forEach((s) => setNode(s, "skip", "not needed"));
+  } else {
+    setNode("rule", factual ? "block" : "skip", factual ? "no matching rule → retrieval" : "not a structured fact");
+    await sleep(step);
+    setNode("retrieve", "done", `${t.retrieval.length} documents scored`);
+    await sleep(step);
+    const c = t.confidence;
+    setNode("gate", c.pass ? "done" : "block", `${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} ${c.threshold.toFixed(2)}`);
+    await sleep(step);
+    if (t.refused) setNode("llm", "skip", "blocked by gate");
+    else if (t.llm.used) setNode("llm", "done", `${t.llm.ms} ms`);
+    else setNode("llm", "warn", "offline: extractive");
+  }
+  await sleep(step);
+  setNode("answer", t.refused ? "block" : (factual && t.rule?.matched ? "fact" : "done"), t.refused ? "refused" : t.source?.id);
+  await sleep(step);
+  setNode("audit", "done", `entry #${t.audit_id}`);
+}
+
+function render(t) {
+  const factualHit = t.route === "FACTUAL" && t.rule?.matched;
+  const badges = [`<span class="badge ${t.route === "FACTUAL" ? "fact" : "ok"}">${esc(t.route)}</span>`];
+  if (!t.llm.used) badges.push('<span class="badge ok">No LLM used</span>');
+  if (t.llm.fallback && !t.refused) badges.push('<span class="badge warn">Extractive fallback</span>');
+  if (t.refused) badges.push('<span class="badge bad">Refused</span>');
+
+  let html = `<div class="badges">${badges.join("")}</div>`;
+  html += `<p class="answer ${t.refused ? "refused" : ""}">${esc(t.answer)}</p>`;
+
+  if (t.refused) {
+    html += `<div class="why">Confidence ${t.confidence.value.toFixed(2)} is below the ${t.confidence.threshold.toFixed(2)} threshold.
+      No document in the corpus covers: <b>${esc(t.confidence.missing.join(", "))}</b>. The system declines rather than guess.</div>`;
+  } else if (t.source) {
+    const s = t.source;
+    const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>' : '<span class="tag">Circular</span>';
+    html += `<div class="source"><div class="t">${esc(s.title)} ${kind}</div>
+      <div>${esc(s.id)} · ${esc(s.dept)} · ${esc(s.date)}</div>
+      ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
+      ${factualHit ? "<div>Answered from the structured rule table, sourced from this circular.</div>" : ""}</div>`;
+    if (s.supersedes) {
+      html += `<div class="supersede"><b>Version-aware:</b> supersedes ${esc(s.supersedes.id)}
+        (${esc(s.supersedes.date)})${t.rule?.previous ? `, which set it at <b>${esc(t.rule.previous)}</b>` : ""}.
+        The outdated circular is not used as an answer.</div>`;
+    }
+  }
+  $("#answer").innerHTML = html;
+
+  if (!t.retrieval.length) {
+    $("#hits").innerHTML = `<p class="empty">${factualHit ? "Skipped: the rule engine answered deterministically." : "No document matched."}</p>`;
+  } else {
+    $("#hits").innerHTML = '<ul class="hits">' + t.retrieval.map((h) => {
+      const chosen = !t.refused && t.source && h.id === t.source.id;
+      const cls = h.superseded_by ? "old" : chosen ? "chosen" : "";
+      const tags = (h.type === "interview" ? '<span class="tag int">interview</span>' : "") +
+        (h.superseded_by ? `<span class="tag old">superseded by ${esc(h.superseded_by)}</span>` : "") +
+        (chosen ? '<span class="tag">source</span>' : "");
+      return `<li class="${cls}"><div class="row"><span><span class="id">${esc(h.id)}</span> ${tags}</span><span>${h.score.toFixed(2)}</span></div>
+        <div class="row"><span class="empty ttl">${esc(h.title)}</span></div>
+        <div class="bar" style="width:${Math.max(4, h.relative * 100)}%"></div></li>`;
+    }).join("") + "</ul>";
+  }
+
+  const c = t.confidence;
+  if (factualHit) {
+    $("#conf").innerHTML = '<p class="empty">Exact rule match: confidence 1.00 by construction.</p>';
+  } else if (c) {
+    $("#conf").innerHTML = `<div>${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} threshold ${c.threshold.toFixed(2)}
+        <span class="badge ${c.pass ? "ok" : "bad"}">${c.pass ? "pass" : "blocked"}</span></div>
+      <div class="meter"><i class="${c.pass ? "" : "low"}" style="width:${c.value * 100}%"></i><b style="left:${c.threshold * 100}%"></b></div>
+      <div class="empty">${esc(c.note)}</div>
+      <div class="chips">${c.matched.map((w) => `<span class="y">${esc(w)}</span>`).join("")}${c.missing.map((w) => `<span class="n">${esc(w)}</span>`).join("")}</div>`;
+  }
+}
+
+async function loadAudit() {
+  try {
+    const rows = await (await fetch("/api/audit")).json();
+    $("#audit").innerHTML = rows.map((r) => `<tr><td>${r.id}</td><td>${esc((r.ts || "").slice(11, 19))}</td>
+      <td>${esc(r.query)}</td><td>${esc(r.route)}</td><td>${esc(r.source || "—")}</td>
+      <td>${r.confidence == null ? "" : Number(r.confidence).toFixed(2)}</td></tr>`).join("");
+  } catch { /* audit view is non-critical */ }
+}
+loadAudit();
+const deepLink = new URLSearchParams(location.search).get("q");
+if (deepLink) { $("#q").value = deepLink; run(deepLink); }
+</script>
+</body>
+</html>
