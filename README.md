@@ -16,19 +16,25 @@ WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a
 
 ## Screenshots
 
-**A cited answer with its source file:** the answer is quoted from the passage, and the file it came from opens below with that passage highlighted.
+All screenshots show real answers from DeepSeek (`deepseek-v4-flash`) over the real papers.
+
+**A cited answer, with the only text the AI was given beside it:** *"What is federated information retrieval?"* DeepSeek's summary on the left, the exact passage it received on the right (Melzer et al., CEUR-WS, page 9). Anyone can check that it added nothing.
 
 ![Cited answer with source file](demo/screenshots/1-cited-answer-with-source.png)
 
-**Click "Open source file" and the real file pops up,** with the passage the answer came from highlighted, and buttons to open or download the original:
+**Click "Open source file" and the real file pops up:** the PDF of Mathur et al. 2026, scrolled to the cited passage on page 4 (the Conclusion), with buttons to open or download the original.
 
 ![Source file pop-up](demo/screenshots/4-source-file-popup.png)
 
-**A question the documents don't cover:** the accuracy check refuses it before any AI is used.
+**When the passage doesn't answer, the AI declines:** for *"What are the failure points of RAG systems?"* the search found the Barnett et al. title page. DeepSeek read it, saw the answer wasn't there, and said so instead of answering from its own memory.
+
+![AI declined](demo/screenshots/5-ai-declined.png)
+
+**A question no document covers:** the accuracy check refuses it before any AI is used.
 
 ![Refused question](demo/screenshots/2-refused-question.png)
 
-**The full pipeline,** opened via "How was this answered?", which the presenter can expand:
+**The full pipeline,** opened via "How was this answered?": sources checked, the accuracy check with matched words, the AI step with its response time, and the activity log.
 
 ![Full pipeline](demo/screenshots/3-full-pipeline.png)
 
