@@ -72,7 +72,61 @@ LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
 GROQ_API_KEY=your_key python3 demo/app.py
 ```
 
-Bedrock defaults to the `global.anthropic.claude-haiku-4-5-20251001-v1:0` inference profile; override it with `BEDROCK_MODEL_ID`. A *global* profile may process requests outside the chosen region. A production deployment that needs data residency would use an in-region model or geography-specific profile instead.
+See [Connecting Amazon Bedrock](#connecting-amazon-bedrock) for the full setup.
+
+## Connecting Amazon Bedrock
+
+The demo calls Bedrock through the AWS CLI, so there is nothing extra to install in Python. You need the AWS CLI v2, an AWS account, and about 10 minutes.
+
+**1. Create credentials with Bedrock permission.** In the IAM console, create a user (or use an existing one) and attach a policy that allows `bedrock:InvokeModel`. The Converse API the demo uses requires this permission. For a demo this is enough:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{ "Effect": "Allow", "Action": "bedrock:InvokeModel", "Resource": "*" }]
+}
+```
+
+Scope `Resource` down to the specific model and inference-profile ARNs for anything beyond a demo. Then create an access key for the user.
+
+**2. Configure the CLI** in your own terminal. Never put keys in the repo.
+
+```bash
+aws configure            # access key, secret key, region: ap-southeast-1, output: json
+aws sts get-caller-identity   # should print your account and user
+```
+
+**3. Enable the model.** In the Bedrock console (region `ap-southeast-1`), check that **Claude Haiku 4.5** is available to your account. If the console shows a *Model access* page, request access there. The first use of an Anthropic model may ask for a short one-time use-case form.
+
+**4. Test Bedrock directly:**
+
+```bash
+aws bedrock-runtime converse --region ap-southeast-1 \
+  --model-id global.anthropic.claude-haiku-4-5-20251001-v1:0 \
+  --messages '[{"role":"user","content":[{"text":"Reply with OK"}]}]'
+```
+
+If you get a JSON response containing `"OK"`, you're connected.
+
+**5. Run the demo on Bedrock:**
+
+```bash
+LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
+```
+
+The startup line should say `LLM: Amazon Bedrock`. In the UI, scenarios 2 and 5 then show **Bedrock · *N* ms** on the LLM stage, and the *Extractive fallback* badge disappears.
+
+**Troubleshooting.** Errors are printed in the terminal running `app.py`. The demo keeps working with extractive answers while you fix them.
+
+| Error | Fix |
+|---|---|
+| `NoCredentials` | Step 2 wasn't done in the shell running the demo |
+| `AccessDeniedException` | The IAM policy (step 1) or model access (step 3) is missing |
+| `ValidationException` about the model identifier | Copy the Haiku 4.5 inference profile ID shown in the Bedrock console for your region, and set `BEDROCK_MODEL_ID=<that id>` |
+
+**Notes**
+- The default `global.` inference profile may process requests outside `ap-southeast-1`. A deployment that needs data residency would use an in-region model or a geography-specific profile instead.
+- Cost is about US$0.003 per answered question. Fact lookups and refused questions never call the model.
 
 Open `http://localhost:8000/?q=your+question` to run a question directly from the URL.
 
