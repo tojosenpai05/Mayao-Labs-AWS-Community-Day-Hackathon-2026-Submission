@@ -4,7 +4,9 @@
 
 Government agencies hold thousands of policies, SOPs, circulars and meeting minutes, but officers can't find the right one quickly, can't tell which version is current, and lose the reasoning behind decisions when experienced staff retire.
 
-WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a question in plain English and it returns a **cited** answer: the source document, its version date and the department that owns it. It answers structured facts from a deterministic rule table rather than letting an LLM guess them. It recognises when a circular has been superseded. When the answer isn't in the corpus it **says so instead of guessing**.
+WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a question in plain English, and it returns an answer **quoted from a real document**. It names the exact file and shows that file with the passage highlighted, so anyone can check the answer. When no document covers the question, it **says so instead of guessing**.
+
+**Nothing in this demo is invented.** It searches only real files that exist in this repository: the team's research notes, which cite published studies.
 
 ## Team
 
@@ -14,39 +16,25 @@ WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a
 
 ## Screenshots
 
-**Institutional memory:** a *why* question answered from a captured interview with a retired officer. No circular contains this. The superseded 2022 circular appears in retrieval but is struck through.
+**A cited answer with its source file:** the answer is quoted from the passage, and the file it came from opens below with that passage highlighted.
 
-![Institutional memory](demo/screenshots/5-institutional-memory.png)
+![Cited answer with source file](demo/screenshots/1-cited-answer-with-source.png)
 
-**Version supersession:** the rule engine answers from the current circular and shows what it replaced. No LLM involved.
+**A question the documents don't cover:** the accuracy check refuses it before any AI is used.
 
-![Version supersession](demo/screenshots/4-version-supersession.png)
+![Refused question](demo/screenshots/2-refused-question.png)
 
-**Out-of-corpus refusal:** the confidence gate blocks the question before any LLM call is made.
+**The full pipeline,** opened via "How was this answered?", which the presenter can expand:
 
-![Out-of-corpus refusal](demo/screenshots/3-out-of-corpus-refusal.png)
+![Full pipeline](demo/screenshots/3-full-pipeline.png)
 
-The other two scenarios are in [`demo/screenshots/`](demo/screenshots/).
+## What it searches
 
-## The five scenarios
+The 18 research notes in [`research/`](research/). Each one summarises a published study or report and cites it (for example Barnett et al. 2024, *Seven Failure Points When Engineering a RAG System*, arXiv). Long documents are split into ~180-word passages, so every answer points to an exact passage, not a whole paper. Any **PDF dropped into `demo/library/`** is indexed on the next restart, with page-level citations (text extracted by `pdftotext` from poppler-utils).
 
-| # | Scenario | Question | Path | LLM needed? |
-|---|---|---|---|---|
-| 1 | Deterministic fact | What is the annual leave entitlement for Grade 41? | Router → rule engine | No |
-| 2 | Cited answer | How do I apply for annual leave? | Router → BM25 → confidence gate → LLM | Optional |
-| 3 | Out-of-corpus refusal | What is the work-from-home policy? | Router → BM25 → **gate blocks** | No |
-| 4 | Version supersession | What is the direct procurement limit? | Router → rule engine (current circular, replaced one shown) | No |
-| 5 | Institutional memory | Why was the procurement threshold raised in 2024? | Router → BM25 → knowledge interview | Optional |
+Example questions: *What are the failure points of RAG systems?* · *Why is DDMS adoption in Malaysia still low?* · *What records management problems did Sarawak agencies have?* · *What is the work-from-home policy?* (refused: no document covers it)
 
-**All five work with no LLM at all.** Without an API key, scenarios 2 and 5 fall back to quoting the best-matching passage of the cited source. An LLM only rewrites that passage into a summary. This is a design choice rather than a workaround: policy facts should never depend on a model guessing, and a demo should not depend on conference wifi.
-
-## Research library: real documents
-
-The **Research library** tab runs the same pipeline over real documents: the team's 18 research notes in [`research/`](research/), which summarise and cite the published studies behind this project. Long documents are split into ~180-word passages, so every answer cites the exact passage rather than a whole paper. Any **PDF dropped into `demo/library/`** is indexed too on the next restart, with page-level citations (text is extracted by `pdftotext` from poppler-utils).
-
-![Research library](demo/screenshots/6-research-library.png)
-
-The rule engine and supersession checks apply only to the circulars. The confidence gate works on both, so questions the research doesn't cover are still refused.
+**Every answer works with no AI at all.** Without an LLM, the answer is the best-matching passage quoted word for word. The self-test checks that a quoted answer appears verbatim in the cited passage. An LLM, if connected, only rewrites that passage into a summary.
 
 ## How it works
 
@@ -56,8 +44,8 @@ Query → Router ─┬─ FACTUAL ──────→ Rule engine ───�
 ```
 
 - **Router.** Questions containing structured-fact markers (*grade, entitlement, limit, rate…*) go to the rule engine. *Why* questions always go to retrieval, because a lookup table cannot explain a rationale.
-- **Rule engine.** A table of exact values, each pointing at the circular it came from.
-- **BM25 retrieval** over the document corpus. Superseded documents are still retrieved but never used as the answer.
+- **Rule engine (policy lookup).** A table of exact values, each pointing at the official circular it came from. **It is empty in this demo**, because we only use verified real documents and have no official circulars yet. Every question therefore goes to document search. In deployment it is filled from an agency's verified circulars.
+- **BM25 retrieval** over the document passages. Documents marked as superseded are still retrieved but never used as the answer (no real documents in the demo are superseded yet).
 - **Confidence gate.** This is the share of the question's key terms that appear in the top source, with rarer, more specific terms weighted higher. Below 0.50, the system refuses before any LLM call is made.
 - **Audit log.** Every query, answer, source and confidence score is recorded.
 
@@ -67,7 +55,7 @@ Requires Python 3.10+. **No packages to install**: it uses only the standard lib
 
 ```bash
 python3 demo/app.py            # http://localhost:8000
-python3 demo/app.py --selftest # checks routing, ranking, refusal, supersession
+python3 demo/app.py --selftest # checks real files, ranking, refusal, verbatim quotes
 ```
 
 Optional LLM answer generation, either with Amazon Bedrock or with Groq's free tier:
@@ -122,7 +110,7 @@ If you get a JSON response containing `"OK"`, you're connected.
 LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
 ```
 
-The startup line should say `LLM: Amazon Bedrock`. In the UI, scenarios 2 and 5 then show **Bedrock · *N* ms** on the LLM stage, and the *Extractive fallback* badge disappears.
+The startup line should say `LLM: Amazon Bedrock`. Answers then show an **AI summary · Bedrock** badge, and the *Quoted from source* badge disappears.
 
 **Troubleshooting.** Errors are printed in the terminal running `app.py`. The demo keeps working with extractive answers while you fix them.
 
@@ -134,19 +122,19 @@ The startup line should say `LLM: Amazon Bedrock`. In the UI, scenarios 2 and 5 
 
 **Notes**
 - The default `global.` inference profile may process requests outside `ap-southeast-1`. A deployment that needs data residency would use an in-region model or a geography-specific profile instead.
-- Cost is about US$0.003 per answered question. Fact lookups and refused questions never call the model.
+- Cost is about US$0.003 per answered question. Refused questions never call the model.
 
 Open `http://localhost:8000/?q=your+question` to run a question directly from the URL.
 
 ## AWS deployment target
 
-The demo runs locally. Each component maps one-to-one onto AWS, and the four functions in `demo/app.py` that touch storage or the LLM (`load_corpus`, `load_rules`, `call_llm`, `log_audit`) are the swap points:
+The demo runs locally. Each component maps one-to-one onto AWS, and the functions in `demo/app.py` that touch storage or the LLM (`load_library`, `call_llm`, `log_audit`) are the swap points:
 
 | Demo today | On AWS |
 |---|---|
-| `corpus/*.md` | Amazon S3 |
+| `research/*.md`, `demo/library/` | Amazon S3 |
 | Router + BM25 (Python) | AWS Lambda behind a Function URL |
-| Rule table (dict) | Amazon DynamoDB |
+| Rule table (empty until verified circulars exist) | Amazon DynamoDB |
 | Groq / extractive fallback | Amazon Bedrock, Claude Haiku 4.5 (already supported via `LLM_PROVIDER=bedrock`) |
 | SQLite audit log | Amazon DynamoDB + CloudWatch |
 
@@ -161,7 +149,8 @@ The demo runs locally. Each component maps one-to-one onto AWS, and the four fun
 - Bedrock Guardrails for content filtering
 - An admin interface for maintaining the rule table, which flags rules whose source circular has changed
 - **Bahasa Malaysia + English** queries and documents. The demo is English-only.
-- **Knowledge capture pipeline (SOL-03).** Retiring officers record exit interviews, transcribed by Amazon Transcribe. AI-guided follow-up questions fill the gaps, and the result is structured into indexed documents. The demo already shows the *output* of this pipeline: scenario 5 answers from a captured interview.
+- **Knowledge capture pipeline (SOL-03).** Retiring officers record exit interviews, transcribed by Amazon Transcribe. AI-guided follow-up questions fill the gaps, and the result is structured into indexed documents that WAWASAN searches like any other file.
+- Filling the policy lookup table and version (supersession) links from an agency's verified official circulars
 
 **Phase 3: ecosystem**
 - Knowledge graph (Amazon Neptune) for cross-agency relationships, e.g. "Circular X changed, and these four SOPs reference it". It sits outside the live query path to keep latency down.
@@ -176,4 +165,4 @@ The demo runs locally. Each component maps one-to-one onto AWS, and the four fun
 
 ## Note on the demo data
 
-Every document in `demo/corpus/` was written for this demo. The circular numbers, values and interviewed officers are **fictional** and do not represent actual Sarawak government policy or real people. The research library, by contrast, is the team's real research notes.
+The demo searches only real files in this repository: the team's research notes in `research/`, plus any PDFs placed in `demo/library/`. An earlier version used invented sample circulars. They were removed because the demo must not present fabricated policy as fact.

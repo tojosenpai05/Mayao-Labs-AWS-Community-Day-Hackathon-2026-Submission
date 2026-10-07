@@ -19,7 +19,9 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-CORPUS_DIR = ROOT / "corpus"
+# The policy lookup table stays empty until it can be filled from verified official circulars:
+# the demo never invents policy values, so every question currently goes to document search.
+RULES = []
 # Research library: the team's research notes plus any papers dropped into demo/library/.
 # PDFs under research/ are skipped because they are generated copies of the notes.
 LIBRARY_SOURCES = [(ROOT.parent / "research", {".md"}), (ROOT / "library", {".md", ".txt", ".pdf"})]
@@ -41,25 +43,6 @@ FACTUAL = re.compile(r"\b(grade|entitlement|limit|rate|amount|maximum|how many|h
 
 def tokenize(text):
     return [t for t in re.findall(r"[a-z0-9]+", text.lower()) if t not in STOP]
-
-
-# --- Swap points: each of these four becomes an AWS call in Phase 2 ---------
-
-def load_corpus():
-    docs = []
-    for path in sorted(CORPUS_DIR.glob("*.md")):
-        _, front, body = path.read_text().split("---", 2)
-        meta = {}
-        for line in front.strip().splitlines():
-            key, _, value = line.partition(":")
-            value = value.strip()
-            meta[key.strip()] = None if value in ("", "null") else value
-        meta["body"] = body.strip()
-        meta["file"] = path.relative_to(ROOT.parent).as_posix()
-        meta["tf"] = Counter(tokenize(f"{meta['title']} {meta['body']}"))
-        meta["len"] = sum(meta["tf"].values())
-        docs.append(meta)
-    return docs
 
 
 def clean_markdown(text):
@@ -127,23 +110,6 @@ def load_library():
                                "date": None, "page": page, "superseded_by": None, "body": body, "file": rel,
                                "tf": tf, "len": sum(tf.values())})
     return chunks
-
-
-def load_rules():
-    return [
-        {"topic": "Annual leave entitlement", "needs": {"annual", "leave"}, "source": "SC-4-2022",
-         "by_grade": [(19, 40, "20 days"), (41, 43, "25 days"), (44, 52, "30 days"), (54, 99, "35 days")]},
-        {"topic": "Medical leave", "needs": {"medical", "leave"}, "source": "SC-9-2022",
-         "value": "Up to 90 days per calendar year (government medical officer certification)"},
-        {"topic": "Direct procurement limit", "needs": {"procurement"}, "source": "SC-7-2024",
-         "value": "RM 50,000 per transaction", "previous": "RM 20,000 per transaction"},
-        {"topic": "Mileage rate", "needs": {"mileage"}, "source": "SC-2-2023",
-         "value": "RM 0.70 per kilometre"},
-        {"topic": "Overtime rate", "needs": {"overtime"}, "source": "SC-6-2023",
-         "value": "1.5x hourly rate on a working day; 2.0x on a rest day or public holiday"},
-        {"topic": "Accommodation ceiling", "needs": {"accommodation"}, "source": "SC-2-2023",
-         "by_grade": [(1, 43, "RM 160 per night"), (44, 99, "RM 220 per night")]},
-    ]
 
 
 def llm_provider():
@@ -375,7 +341,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/doc":
             # The exact indexed text of one file, passage by passage, so the viewer shows what was searched.
             wanted = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("file", [""])[0]
-            parts = [d for docs in CORPORA.values() for d in docs if d["file"] == wanted]
+            parts = [d for d in DOCS if d["file"] == wanted]
             if not parts:
                 return self._send(404, json.dumps({"error": "not an indexed document"}), "application/json")
             doc = {"file": wanted, "title": parts[0]["title"],
@@ -391,9 +357,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(200, target.read_bytes(), ctype)
         elif path == "/api/status":
             status = {"llm": llm_provider(), "rules": len(RULES),
-                      "corpora": {"circulars": {"documents": len(CORPORA["circulars"])},
-                                  "library": {"documents": len({d["file"] for d in CORPORA["library"]}),
-                                              "passages": len(CORPORA["library"])}}}
+                      "documents": len({d["file"] for d in DOCS}), "passages": len(DOCS)}
             self._send(200, json.dumps(status), "application/json")
         elif path == "/api/audit":
             with sqlite3.connect(DB_PATH) as db:
@@ -416,66 +380,49 @@ class Handler(http.server.BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length) or b"{}")
         query = str(body.get("query", "")).strip()[:500]
-        corpus = body.get("corpus", "circulars")
         if not query:
             return self._send(400, json.dumps({"error": "empty query"}), "application/json")
-        if corpus not in CORPORA or not CORPORA[corpus]:
-            return self._send(400, json.dumps({"error": f"unknown or empty corpus: {corpus}"}), "application/json")
-        # The rule table holds circular facts; it does not apply to the research library.
-        rules = RULES if corpus == "circulars" else []
-        self._send(200, json.dumps(answer(query, CORPORA[corpus], rules)), "application/json")
+        self._send(200, json.dumps(answer(query, DOCS, RULES)), "application/json")
 
 
 def selftest():
-    docs, rules = load_corpus(), load_rules()
-    assert classify("What is the annual leave entitlement for Grade 41?")[0] == "FACTUAL"
-    assert classify("How do I apply for annual leave?")[0] == "INTERPRETIVE"
-    assert classify("Why was the procurement threshold raised in 2024?")[0] == "INTERPRETIVE"
-
-    rule, value = match_rule("What is the annual leave entitlement for Grade 41?", rules)
-    assert rule["source"] == "SC-4-2022" and value.startswith("25 days"), value
-
-    _, top = best_current(bm25("How do I apply for annual leave?", docs))
-    assert top["id"] == "SC-5-2022", top["id"]
-
-    _, top = best_current(bm25("What is the work-from-home policy?", docs))
-    assert coverage("What is the work-from-home policy?", top, docs)[0] < THRESHOLD
-
-    ranked = bm25("direct procurement limit", docs)
-    assert {"SC-3-2022", "SC-7-2024"} <= {d["id"] for _, d in ranked[:3]}, "both versions should be retrieved"
-    assert best_current(ranked)[1]["id"] == "SC-7-2024", "superseded circular must not be the answer"
-
-    q = "Why was the procurement threshold raised in 2024?"
-    _, top = best_current(bm25(q, docs))
-    assert top["type"] == "interview", top["id"]
-    assert extract(q, top).startswith("The reason the threshold was raised"), "fallback must quote the answer, not the question"
-
-    q = "How do I apply for annual leave?"
-    assert "Step 1" in extract(q, best_current(bm25(q, docs))[1])
-
+    global DB_PATH
+    DB_PATH = Path(os.environ.get("TMPDIR", "/tmp")) / "wawasan-selftest.db"
     lib = load_library()
-    assert all((ROOT.parent / d["file"]).is_file() for d in docs + lib), "every citation must point at a real file"
-    assert len(lib) > 50, "research library should be chunked into passages"
+    assert all((ROOT.parent / d["file"]).is_file() for d in lib), "every citation must point at a real file"
+    assert len(lib) > 50, "the library should be chunked into passages"
     assert all(len(c["body"].split()) <= CHUNK_WORDS * 3 for c in lib), "a passage is unreasonably long"
+
+    assert classify("What is the maximum number of failure points?")[0] == "FACTUAL"
+    assert classify("Why is DDMS adoption in Malaysia still low?")[0] == "INTERPRETIVE"
+
     _, top = best_current(bm25("What are the failure points of RAG systems?", lib))
     assert top["id"].startswith("03-seven-failure-points"), top["id"]
+
     q = "What is the work-from-home policy?"
     assert coverage(q, best_current(bm25(q, lib))[1], lib)[0] < THRESHOLD, "common words must not pass the gate"
 
-    print(f"selftest OK ({len(docs)} documents, {len(rules)} rules, {len(lib)} library passages)")
+    t = answer("What is the maximum number of failure points?", lib, RULES)
+    assert t["rule"] == {"matched": False, "topic": None, "previous": None} and t["retrieval"], \
+        "with no verified rules, factual questions must fall through to document search"
+
+    q = "What records management problems did Sarawak agencies have?"
+    t = answer(q, lib, RULES)
+    assert not t["refused"] and t["source"]["file"].startswith("research/"), t["source"]
+    passage = next(d["body"] for d in lib if d["id"] == t["source"]["id"])
+    assert all(p in passage for p in t["answer"].split("\n\n")), "a quoted answer must be verbatim from the cited passage"
+
+    print(f"selftest OK ({len({d['file'] for d in lib})} files, {len(lib)} passages)")
 
 
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
         sys.exit()
-    CORPORA, RULES = {"circulars": load_corpus(), "library": load_library()}, load_rules()
-    DOCS = CORPORA["circulars"]
-    FILES = {d["file"]: ROOT.parent / d["file"] for docs in CORPORA.values() for d in docs}
+    DOCS = load_library()
+    FILES = {d["file"]: ROOT.parent / d["file"] for d in DOCS}
     port = int(os.environ.get("PORT", 8000))
     llm = {"bedrock": "Amazon Bedrock", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
-    lib = CORPORA["library"]
-    print(f"WAWASAN demo: {len(DOCS)} circulars, {len(RULES)} rules, "
-          f"library {len({d['file'] for d in lib})} files / {len(lib)} passages, LLM: {llm}")
+    print(f"WAWASAN demo: {len(FILES)} files / {len(DOCS)} passages, LLM: {llm}")
     print(f"http://localhost:{port}")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

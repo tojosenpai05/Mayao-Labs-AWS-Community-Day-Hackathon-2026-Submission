@@ -199,16 +199,12 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
         </svg>
         <h1>WAWASAN</h1>
       </div>
-      <p class="tagline">Ask any question about Sarawak government policy. Get a cited answer from official circulars and records.</p>
+      <p class="tagline">Ask a question and get an answer quoted from real documents, with the exact source file shown so you can check it.</p>
     </div>
     <span class="status" id="status"><i></i>Connecting…</span>
   </header>
 
   <section class="panel">
-    <div class="seg" id="seg" role="tablist" aria-label="Corpus">
-      <button type="button" role="tab" data-c="circulars">Government circulars</button>
-      <button type="button" role="tab" data-c="library">Research library</button>
-    </div>
     <label class="ask-label" for="q">What do you need to know?</label>
     <form id="f">
       <input id="q" type="text" autocomplete="off" placeholder="e.g. How do I apply for annual leave?">
@@ -270,13 +266,6 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 
 <script>
 const PRESET_SETS = {
-  circulars: [
-    ["Annual leave entitlement", "What is the annual leave entitlement for Grade 41?"],
-    ["How to apply for leave", "How do I apply for annual leave?"],
-    ["Question we can't answer", "What is the work-from-home policy?"],
-    ["Procurement limit (updated)", "What is the direct procurement limit?"],
-    ["Why a policy changed", "Why was the procurement threshold raised in 2024?"],
-  ],
   library: [
     ["RAG failure points", "What are the failure points of RAG systems?"],
     ["Malaysia adoption gap", "Why is DDMS adoption in Malaysia still low?"],
@@ -285,13 +274,12 @@ const PRESET_SETS = {
   ],
 };
 const TOPICS = {
-  circulars: ["Leave & HR", "Procurement", "Claims & allowances", "Records & governance"],
   library: ["Knowledge management", "AI search (RAG)", "Malaysia e-government", "Sarawak records"],
 };
 const METHOD = { FACTUAL: "Policy lookup", INTERPRETIVE: "Document search" };
-const PLACEHOLDER = { circulars: "e.g. How do I apply for annual leave?", library: "e.g. Why do RAG systems fail on government documents?" };
+const PLACEHOLDER = { library: "e.g. Why do RAG systems fail on government documents?" };
 const params = new URLSearchParams(location.search);
-let corpus = PRESET_SETS[params.get("corpus")] ? params.get("corpus") : "circulars";
+let corpus = "library";
 let PRESETS = PRESET_SETS[corpus];
 let STATUS = null;
 const $ = (s) => document.querySelector(s);
@@ -300,9 +288,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
 const LLM_NAME = { bedrock: "Bedrock", groq: "Groq" };
 const START = {
-  circulars: `<p class="empty">Type a question above, or pick an example (keys <kbd>1</kbd>–<kbd>5</kbd>).
-    Every answer shows the circular it came from.</p>`,
-  library: `<p class="empty">Searches the team's real research notes, passage by passage, so every answer cites the exact passage.
+  library: `<p class="empty">Every answer is quoted from a real file in this project, and the file is shown so you can check it.
     Pick an example (keys <kbd>1</kbd>–<kbd>4</kbd>), or drop PDFs into <code>demo/library/</code> and restart to include them.</p>`,
 };
 
@@ -501,11 +487,7 @@ async function loadAudit() {
 function renderStatus() {
   if (!STATUS) return;
   const llm = STATUS.llm ? `AI: ${LLM_NAME[STATUS.llm]}` : "No AI · quoting sources";
-  const c = STATUS.corpora;
-  const what = corpus === "library"
-    ? `${c.library.documents} research files · ${c.library.passages} passages`
-    : `${c.circulars.documents} documents · ${STATUS.rules} rules`;
-  $("#status").innerHTML = `<i></i>${what} · ${esc(llm)}`;
+  $("#status").innerHTML = `<i></i>${STATUS.documents} real files · ${STATUS.passages} passages · ${esc(llm)}`;
 }
 
 async function loadStatus() {
