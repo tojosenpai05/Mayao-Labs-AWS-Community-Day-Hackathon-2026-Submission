@@ -164,10 +164,9 @@ Sarawak government documents are sensitive. Routing them through cloud AI servic
 
 ### Phase 1 — Hackathon MVP (built: see `demo/`)
 - Dependency-free pipeline: query router, deterministic rule engine, BM25 retrieval, confidence gate with refusal, version supersession, audit log
-- Captured knowledge-interview transcripts indexed alongside circulars (the *output* of the SOL-03 capture workflow)
 - Web UI that visualises each pipeline stage's decision
 - Optional answer generation via Amazon Bedrock (Claude Haiku 4.5); every scenario also works without an LLM
-- Sample corpus of fictional circulars; English only
+- Searches only real files (the team's research notes); every citation names the real file and the viewer shows it. English only
 
 ### Phase 2 — Pilot and production on AWS (3–12 months)
 - Deploy the MVP: S3 corpus · Lambda (Function URL) for router + retrieval · DynamoDB for rule tables + audit log · Bedrock for answers

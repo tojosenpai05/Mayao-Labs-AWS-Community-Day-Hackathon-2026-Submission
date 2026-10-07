@@ -11,7 +11,7 @@
 | | Built (hackathon MVP, `demo/`) | Production target (AWS) |
 |---|---|---|
 | **Runs on** | Any machine with Python 3.10+, standard library only | S3 · Lambda · DynamoDB · Bedrock |
-| **Corpus** | 15 fictional circulars + 3 knowledge-interview transcripts | One pilot agency's real documents |
+| **Corpus** | The team's 18 real research notes (`research/`), plus any PDFs in `demo/library/` | One pilot agency's real documents |
 | **Retrieval** | BM25, in-process | BM25 in Lambda; hybrid BM25 + dense once the corpus grows |
 | **LLM** | Optional: Bedrock or Groq; extractive fallback when absent | Bedrock, Claude Haiku 4.5 |
 | **Language** | English | Bahasa Malaysia + English |
@@ -45,8 +45,9 @@ Query → Router ─┬─ FACTUAL ──────→ Rule engine ───�
 
 | Type | Examples | In the demo | Layer |
 |---|---|---|---|
-| Formal policy documents | Policies, SOPs, circulars | 15 fictional circulars (`SC-*.md`) | SOL-01 |
-| Knowledge interviews | Retiring officers explaining *why* decisions were made | 3 fictional transcripts (`KI-*.md`) | SOL-03 |
+| Formal policy documents | Policies, SOPs, circulars | Not yet: no verified official circulars available | SOL-01 |
+| Knowledge interviews | Retiring officers explaining *why* decisions were made | Not yet (roadmap) | SOL-03 |
+| Research documents | Studies and reports on the problem | 18 research notes in `research/` (real) | SOL-01 |
 | Structured policy facts | Grade entitlements, procurement limits | Rule table in `app.py` | SOL-05 |
 | Scanned legacy records, meeting minutes | Old PDFs, printed circulars | Not in the demo | SOL-01 |
 
@@ -84,8 +85,9 @@ Exact answers for structured facts, each pointing at its source circular. The LL
 
 | Example | Answer | Source |
 |---|---|---|
-| Annual leave, Grade 41 | 25 days | SC-4-2022 |
-| Direct procurement limit | RM 50,000 (previously RM 20,000 under SC-3-2022) | SC-7-2024 |
+| *(illustrative shape only)* Annual leave by grade | value from the circular | that circular's ID |
+
+**In the demo this table is empty.** We have no verified official circulars and will not invent policy values, so every question currently goes to document search.
 
 | Demo | AWS |
 |---|---|
@@ -95,11 +97,11 @@ Exact answers for structured facts, each pointing at its source circular. The LL
 
 The confidence score is the **share of the question's key terms found in the top non-superseded source, with each term weighted by how rare it is (IDF)**. If it is below **0.50**, the system replies *"Information not available in the system"* **before any LLM call is made**.
 
-Example: *"What is the work-from-home policy?"* matches only *work* (in the overtime circular). *Home* is the rarest and most specific term, and it is missing, so confidence is 0.26 and the question is refused.
+Example: *"What is the work-from-home policy?"* matches *work* and *policy* in the research notes but not *home*, the rarest and most specific term. Confidence is 0.33, so the question is refused.
 
 The weighting matters on broader corpora. With equal weights, the research library let that question through: *work* and *policy* are common there, and matching them outweighed missing *home*.
 
-This is deliberately simple and explainable: a judge or an officer can see exactly which terms were missing. Its known limit is paraphrase. *"Who approves study leave?"* is refused because the circular says *approval*, not *approves*. A false refusal is the safer failure for policy answers. Embedding similarity, added with hybrid retrieval in production, fixes this.
+This is deliberately simple and explainable: a judge or an officer can see exactly which terms were missing. Its known limit is paraphrase. A question using *approves* will not match a passage that says *approval*, so it can be refused. A false refusal is the safer failure for policy answers. Embedding similarity, added with hybrid retrieval in production, fixes this.
 
 ### Step 7 — Answer generation
 
@@ -178,8 +180,8 @@ Self-hosted open-source stacks remain relevant for agencies that cannot send dat
 ## Roadmap
 
 ### Phase 1 — Hackathon MVP (built)
-- Router, rule engine, BM25 retrieval, confidence gate, version supersession, audit log
-- Knowledge-interview transcripts indexed alongside circulars (SOL-03 output)
+- Router, rule engine (empty until verified circulars exist), BM25 retrieval over real files, confidence gate, audit log
+- Source viewer: every answer shows its real file with the cited passage highlighted
 - Pipeline-visualising UI; optional Bedrock answer generation; English only
 
 ### Phase 2 — Pilot and production on AWS (3–12 months)
