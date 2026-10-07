@@ -13,6 +13,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import urllib.parse
 import urllib.request
 from collections import Counter
 from pathlib import Path
@@ -54,6 +55,7 @@ def load_corpus():
             value = value.strip()
             meta[key.strip()] = None if value in ("", "null") else value
         meta["body"] = body.strip()
+        meta["file"] = path.relative_to(ROOT.parent).as_posix()
         meta["tf"] = Counter(tokenize(f"{meta['title']} {meta['body']}"))
         meta["len"] = sum(meta["tf"].values())
         docs.append(meta)
@@ -114,14 +116,15 @@ def load_library():
         raw = path.read_text(errors="replace") if path.suffix.lower() == ".md" else ""
         heading = re.search(r"^#\s+(.+)$", raw, re.M)
         title = heading.group(1).strip() if heading else path.stem.replace("-", " ").replace("_", " ")
-        rel = str(path.relative_to(ROOT.parent))
+        rel = path.relative_to(ROOT.parent).as_posix()
+        source = "Mayao Labs research notes" if rel.startswith("research/") else "Document library"
         n = 0
         for page, text in read_pages(path):
             for body in chunk(text):
                 n += 1
                 tf = Counter(tokenize(f"{title} {body}"))
-                chunks.append({"id": f"{path.stem}#{n}", "type": "research", "title": title, "dept": rel,
-                               "date": None, "page": page, "superseded_by": None, "body": body,
+                chunks.append({"id": f"{path.stem}#{n}", "type": "research", "title": title, "dept": source,
+                               "date": None, "page": page, "superseded_by": None, "body": body, "file": rel,
                                "tf": tf, "len": sum(tf.values())})
     return chunks
 
@@ -299,9 +302,10 @@ def extract(query, doc, limit=600):
 def source_info(doc, by_id):
     if not doc:
         return None
-    info = {k: doc.get(k) for k in ("id", "type", "title", "dept", "date", "officer", "page")}
+    info = {k: doc.get(k) for k in ("id", "type", "title", "dept", "date", "officer", "page", "file")}
     sup = doc.get("supersedes")
-    info["supersedes"] = {"id": sup, "title": by_id[sup]["title"], "date": by_id[sup]["date"]} if sup in by_id else None
+    info["supersedes"] = ({"id": sup, "title": by_id[sup]["title"], "date": by_id[sup]["date"], "file": by_id[sup]["file"]}
+                          if sup in by_id else None)
     return info
 
 
@@ -326,7 +330,7 @@ def answer(query, docs, rules):
     top = max(ranked[0][0], 1e-9)
     trace["retrieval"] = [{"id": d["id"], "title": d["title"], "type": d.get("type"),
                            "score": round(s, 2), "relative": round(s / top, 2),
-                           "superseded_by": d.get("superseded_by")}
+                           "superseded_by": d.get("superseded_by"), "file": d["file"], "page": d.get("page")}
                           for s, d in ranked[:5] if s > 0]
     _, doc = best_current(ranked)
     conf, matched, missing = coverage(query, doc, docs)
@@ -368,10 +372,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path in ("/", "/index.html"):
             self._send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
+        elif path == "/api/doc":
+            # The exact indexed text of one file, passage by passage, so the viewer shows what was searched.
+            wanted = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("file", [""])[0]
+            parts = [d for docs in CORPORA.values() for d in docs if d["file"] == wanted]
+            if not parts:
+                return self._send(404, json.dumps({"error": "not an indexed document"}), "application/json")
+            doc = {"file": wanted, "title": parts[0]["title"],
+                   "passages": [{"id": d["id"], "page": d.get("page"), "text": d["body"]} for d in parts]}
+            self._send(200, json.dumps(doc), "application/json")
+        elif path == "/api/file":
+            # Serve only files that are actually indexed: the whitelist is what makes this safe from path traversal.
+            wanted = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("path", [""])[0]
+            target = FILES.get(wanted)
+            if not target:
+                return self._send(404, "not an indexed document", "text/plain")
+            ctype = "application/pdf" if target.suffix.lower() == ".pdf" else "text/plain; charset=utf-8"
+            self._send(200, target.read_bytes(), ctype)
         elif path == "/api/status":
             status = {"llm": llm_provider(), "rules": len(RULES),
                       "corpora": {"circulars": {"documents": len(CORPORA["circulars"])},
-                                  "library": {"documents": len({d["dept"] for d in CORPORA["library"]}),
+                                  "library": {"documents": len({d["file"] for d in CORPORA["library"]}),
                                               "passages": len(CORPORA["library"])}}}
             self._send(200, json.dumps(status), "application/json")
         elif path == "/api/audit":
@@ -433,6 +454,7 @@ def selftest():
     assert "Step 1" in extract(q, best_current(bm25(q, docs))[1])
 
     lib = load_library()
+    assert all((ROOT.parent / d["file"]).is_file() for d in docs + lib), "every citation must point at a real file"
     assert len(lib) > 50, "research library should be chunked into passages"
     assert all(len(c["body"].split()) <= CHUNK_WORDS * 3 for c in lib), "a passage is unreasonably long"
     _, top = best_current(bm25("What are the failure points of RAG systems?", lib))
@@ -449,10 +471,11 @@ if __name__ == "__main__":
         sys.exit()
     CORPORA, RULES = {"circulars": load_corpus(), "library": load_library()}, load_rules()
     DOCS = CORPORA["circulars"]
+    FILES = {d["file"]: ROOT.parent / d["file"] for docs in CORPORA.values() for d in docs}
     port = int(os.environ.get("PORT", 8000))
     llm = {"bedrock": "Amazon Bedrock", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
     lib = CORPORA["library"]
     print(f"WAWASAN demo: {len(DOCS)} circulars, {len(RULES)} rules, "
-          f"library {len({d['dept'] for d in lib})} files / {len(lib)} passages, LLM: {llm}")
+          f"library {len({d['file'] for d in lib})} files / {len(lib)} passages, LLM: {llm}")
     print(f"http://localhost:{port}")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

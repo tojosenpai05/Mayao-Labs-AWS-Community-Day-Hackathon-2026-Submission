@@ -72,6 +72,17 @@ kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); 
 .node .cap { font-size: 12px; color: var(--muted); margin-top: 3px; min-height: 18px; overflow-wrap: anywhere; }
 .node .lane { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
 #n-rule .lane { color: var(--fact); } #n-retrieve .lane { color: var(--accent); }
+.vhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.vtitle { font-weight: 650; margin-top: 6px; }
+.vfile { font: 12px ui-monospace, monospace; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+#vraw { color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.vbody { position: relative; max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 10px;
+  padding: 6px 14px; background: var(--bg); font-size: 14px; line-height: 1.65; }
+.psg { white-space: pre-wrap; padding: 8px 10px; margin: 6px -10px; border-radius: 6px; border-left: 3px solid transparent; }
+.psg.hl { background: var(--accent-soft); border-left-color: var(--accent); }
+.psg .pg { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+[data-file] { cursor: pointer; }
+.cite .file { font: 12px ui-monospace, monospace; overflow-wrap: anywhere; }
 .fold { padding: 0; margin-top: 12px; }
 .fold summary { cursor: pointer; padding: 14px 18px; font-weight: 650; list-style: none; display: flex; align-items: center; gap: 8px; }
 .fold summary::-webkit-details-marker { display: none; }
@@ -209,6 +220,15 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 
   <section class="panel"><h2>Answer</h2><div id="answer"></div></section>
 
+  <section class="panel" id="viewer" hidden>
+    <div class="vhead">
+      <div><h2 style="margin:0">Source document</h2><div class="vtitle" id="vtitle"></div><div class="vfile" id="vfile"></div></div>
+      <a id="vraw" target="_blank" rel="noopener">Open original file ↗</a>
+    </div>
+    <p class="empty" style="margin:8px 0 10px">The full text the system searched. The highlighted passage is the one the answer came from.</p>
+    <div class="vbody" id="vbody"></div>
+  </section>
+
   <details class="panel fold" id="d-sources">
     <summary>Sources checked <span class="count" id="srcCount"></span></summary>
     <div class="fold-body" id="hits"><p class="empty">The documents searched for your question will appear here.</p></div>
@@ -308,6 +328,7 @@ function setCorpus(c) {
   $("#q").placeholder = PLACEHOLDER[c];
   $("#topics").innerHTML = "Topics: " + TOPICS[c].map((t) => `<span>${esc(t)}</span>`).join("");
   $("#answer").innerHTML = START[c];
+  $("#viewer").hidden = true;
   $("#srcCount").textContent = "";
   $("#hits").innerHTML = '<p class="empty">The documents searched for your question will appear here.</p>';
   $("#conf").innerHTML = '<p class="empty">Which words of your question were found in the source will appear here.</p>';
@@ -417,6 +438,7 @@ function render(t) {
       <div class="cite"><span class="n">[1]</span><div>
         <div class="t">${esc(s.title)} ${kind}</div>
         <div>${meta}</div>
+        <div class="file" data-file="${esc(s.file)}" data-id="${esc(s.id)}" title="Show this file below">📄 ${esc(s.file)}</div>
         ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
         ${factualHit ? "<div>Exact value from the policy lookup table, taken from this circular.</div>" : ""}
       </div></div>`;
@@ -424,13 +446,14 @@ function render(t) {
       const prev = t.rule?.previous;
       html += `<div class="banner"><div class="h">⚠ Outdated circular superseded</div>
         <div class="ba">
-          <div class="old">${prev ? `<span class="v">${esc(prev)}</span>` : ""}${esc(s.supersedes.id)} · ${esc(s.supersedes.date)} · outdated</div>
+          <div class="old">${prev ? `<span class="v">${esc(prev)}</span>` : ""}<span data-file="${esc(s.supersedes.file)}" data-id="${esc(s.supersedes.id)}" title="Show the outdated circular" style="text-decoration:underline dotted">${esc(s.supersedes.id)}</span> · ${esc(s.supersedes.date)} · outdated</div>
           <div class="arrow">→</div>
           <div>${prev ? `<span class="v">${esc(t.answer)}</span>` : ""}${esc(s.id)} · ${esc(s.date)} · current</div>
         </div></div>`;
     }
   }
   $("#answer").innerHTML = html;
+  if (t.source && !t.refused) showDoc(t.source.file, t.source.id, t.source.page); else $("#viewer").hidden = true;
 
   if (!t.retrieval.length) {
     $("#srcCount").textContent = factualHit ? "(none needed)" : "(0)";
@@ -444,7 +467,7 @@ function render(t) {
           : h.type === "research" ? '<span class="tag int">Research</span>' : '<span class="tag">Circular</span>') +
         (h.superseded_by ? `<span class="tag old">Outdated · replaced by ${esc(h.superseded_by)}</span>` : "") +
         (chosen ? '<span class="tag src">✓ Used as source</span>' : "");
-      return `<li class="${cls}"><div class="top"><span class="rank">#${i + 1}</span><span class="id">${esc(h.id)}</span>${tags}
+      return `<li class="${cls}" data-file="${esc(h.file)}" data-id="${esc(h.id)}" title="Show this document"><div class="top"><span class="rank">#${i + 1}</span><span class="id">${esc(h.id)}</span>${tags}
           <span class="score" title="Relevance score (BM25). Higher is more relevant; it is not a probability.">${h.score.toFixed(2)}</span></div>
         <div class="ttl">${esc(h.title)}</div>
         <div class="bar" style="width:calc(${Math.max(4, h.relative * 100)}% - 29px)"></div></li>`;
@@ -489,6 +512,27 @@ async function loadStatus() {
   try { STATUS = await (await fetch("/api/status")).json(); renderStatus(); }
   catch { $("#status").textContent = "Offline"; }
 }
+
+async function showDoc(file, highlightId, page) {
+  let d;
+  try {
+    const r = await fetch("/api/doc?file=" + encodeURIComponent(file));
+    if (!r.ok) return;
+    d = await r.json();
+  } catch { return; }
+  $("#vtitle").textContent = d.title;
+  $("#vfile").textContent = d.file;
+  $("#vraw").href = "/api/file?path=" + encodeURIComponent(d.file) + (page ? `#page=${page}` : "");
+  $("#vbody").innerHTML = d.passages.map((p) => `<div class="psg ${p.id === highlightId ? "hl" : ""}">` +
+    `${p.page ? `<span class="pg">Page ${p.page}</span>` : ""}${esc(p.text)}</div>`).join("");
+  $("#viewer").hidden = false;
+  const hl = $("#vbody .hl");
+  $("#vbody").scrollTop = hl ? hl.offsetTop - 12 : 0;
+}
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-file]");
+  if (el && el.dataset.file) showDoc(el.dataset.file, el.dataset.id);
+});
 
 loadStatus();
 loadAudit();
