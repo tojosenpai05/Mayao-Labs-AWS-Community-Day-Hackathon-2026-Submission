@@ -247,6 +247,14 @@ dialog#viewer .vbody { max-height: calc(100vh - 260px); }
 .filebtn { margin-top: 10px; display: inline-flex; gap: 8px; align-items: center; background: var(--lime); color: var(--black);
   border: 1.5px solid var(--black); border-radius: 99px; padding: 7px 14px; font-weight: 650; font-size: 13px; max-width: 100%; }
 .filebtn code { font-size: 12px; overflow-wrap: anywhere; }
+.sbs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+.sbs .answer { margin: 0; }
+.sbs-h { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+  background: var(--lime); border: 1.5px solid var(--black); border-radius: 99px; padding: 2px 10px; margin-bottom: 8px; }
+.given { border: 1.5px dashed var(--black); border-radius: 14px; padding: 12px 14px; }
+.given .sbs-h { background: transparent; }
+.given p { margin: 0; white-space: pre-wrap; font-size: 13.5px; line-height: 1.6; max-height: 260px; overflow: auto; }
+@media (max-width: 760px) { .sbs { grid-template-columns: 1fr; } }
 /* Scenario + capability card grids: alternating black / white */
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .tile { position: relative; overflow: hidden; border: 1.5px solid var(--black); border-radius: 18px; padding: 18px 18px 64px;
@@ -287,7 +295,7 @@ button.tile:hover, button.tile:focus-visible { outline: 3px solid var(--lime); o
         <span class="status" id="status"><i></i>Connecting…</span>
       </div>
       <h1 style="margin-top:18px">Ask a question. Get the answer, and the file it came from.</h1>
-      <p class="tagline">Every answer is quoted from a real document and opens the source file so you can check it yourself.
+      <p class="tagline">Every answer comes from a real document, quoted word for word or summarised by AI from that passage only, and opens the source file so you can check it yourself.
         Demo library: the team's research notes on government document management.</p>
     </div>
     <svg class="deco" viewBox="0 0 200 200" aria-hidden="true">
@@ -545,7 +553,14 @@ function render(t) {
     const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>'
       : s.type === "research" ? '<span class="tag int">Research passage</span>' : '<span class="tag">Circular</span>';
     const meta = [s.id, s.page ? `p. ${s.page}` : null, s.dept, s.date].filter(Boolean).map(esc).join(" · ");
-    html += `<p class="answer">${esc(t.answer)}<sup>[1]</sup></p>
+    html += t.llm.used && t.llm.input
+      ? `<div class="sbs">
+           <div><div class="sbs-h">AI summary · ${esc(LLM_NAME[t.llm.provider] || "AI")}</div>
+             <p class="answer">${esc(t.answer)}<sup>[1]</sup></p></div>
+           <div class="given"><div class="sbs-h">The only text the AI was given</div><p>${esc(t.llm.input)}</p></div>
+         </div>`
+      : `<p class="answer">${esc(t.answer)}<sup>[1]</sup></p>`;
+    html += `
       <div class="cite"><span class="n">[1]</span><div>
         <div class="t">${esc(s.title)} ${kind}</div>
         <div>${meta}</div>

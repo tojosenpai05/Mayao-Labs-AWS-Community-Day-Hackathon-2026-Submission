@@ -325,6 +325,8 @@ def answer(query, docs, rules):
     trace["llm"] = {"used": generated is not None, "provider": llm_provider(),
                     "ms": round((time.time() - started) * 1000),
                     "fallback": None if generated else "extractive (best-matching passage)"}
+    if generated:
+        trace["llm"]["input"] = doc["body"]  # shown beside the summary so readers can check nothing was added
     text = generated or extract(query, doc)
     trace.update(answer=text, source=source_info(doc, by_id))
     trace["audit_id"] = log_audit(query, route, text, doc["id"], conf)
@@ -423,12 +425,27 @@ def selftest():
     print(f"selftest OK ({len({d['file'] for d in lib})} files, {len(lib)} passages)")
 
 
+def load_env(path):
+    """KEY=VALUE lines from a local, git-ignored .env file. Real environment variables win."""
+    if path.is_file():
+        for line in path.read_text().splitlines():
+            key, sep, value = line.strip().partition("=")
+            if sep and key and not key.startswith("#"):
+                os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
+
+def init():
+    global DOCS, FILES
+    DOCS = load_library()
+    FILES = {d["file"]: ROOT.parent / d["file"] for d in DOCS}
+
+
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
         sys.exit()
-    DOCS = load_library()
-    FILES = {d["file"]: ROOT.parent / d["file"] for d in DOCS}
+    load_env(ROOT / ".env")
+    init()
     port = int(os.environ.get("PORT", 8000))
     llm = {"bedrock": "Amazon Bedrock", "deepseek": "DeepSeek", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
     print(f"WAWASAN demo: {len(FILES)} files / {len(DOCS)} passages, LLM: {llm}")
