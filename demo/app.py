@@ -19,13 +19,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 CORPUS_DIR = ROOT / "corpus"
+# Research library: the team's research notes plus any papers dropped into demo/library/.
+# PDFs under research/ are skipped because they are generated copies of the notes.
+LIBRARY_SOURCES = [(ROOT.parent / "research", {".md"}), (ROOT / "library", {".md", ".txt", ".pdf"})]
+CHUNK_WORDS = 180
 DB_PATH = ROOT / "audit.db"
-THRESHOLD = 0.6
+# ponytail: lexical confidence gate. Paraphrases ("approves" vs "approval") cause false refusals,
+# which is the safer failure for policy answers; add embedding similarity once retrieval goes hybrid.
+THRESHOLD = 0.5
 REFUSAL = "Information not available in the system."
 
 # "why" is deliberately NOT a stopword: it signals a request for rationale.
 STOP = set("""a an the is are was were be been what how do does did i you we for of to in
-on at by and or with from can could should my me this that it its as any per""".split())
+on at by and or with from can could should my me this that it its as any per
+who when where which much many long about must will would has have had there their
+these those into also than then only""".split())
 
 FACTUAL = re.compile(r"\b(grade|entitlement|limit|rate|amount|maximum|how many|how much)\b", re.I)
 
@@ -50,6 +58,72 @@ def load_corpus():
         meta["len"] = sum(meta["tf"].values())
         docs.append(meta)
     return docs
+
+
+def clean_markdown(text):
+    lines = []
+    for line in text.splitlines():
+        s = line.strip()
+        if s and set(s) <= set("|-: "):  # table rules and horizontal rules
+            continue
+        s = re.sub(r"^(#{1,6}|>)\s*", "", s).replace("**", "").replace("`", "")
+        lines.append(s)
+    return "\n".join(lines)
+
+
+def is_heading(p):
+    return len(p.split()) <= 8 and not p.rstrip().endswith((".", ":", "?", "!"))
+
+
+def chunk(text, limit=CHUNK_WORDS):
+    """Group paragraphs into ~limit-word passages so citations point at a passage, not a whole paper.
+    Whole long documents would also defeat the confidence gate: they contain almost every term."""
+    paras = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+    chunks, cur, words = [], [], 0
+    for p in paras:
+        n = len(p.split())
+        if cur and words + n > limit:
+            carry = [cur.pop()] if len(cur) > 1 and is_heading(cur[-1]) else []  # heading belongs to what follows
+            chunks.append("\n\n".join(cur))
+            cur, words = carry, sum(len(c.split()) for c in carry)
+        cur.append(p)
+        words += n
+    if cur:
+        chunks.append("\n\n".join(cur))
+    return [c for c in chunks if len(c.split()) >= 5]
+
+
+def read_pages(path):
+    """[(page_number or None, text)] for a library file."""
+    if path.suffix.lower() == ".pdf":
+        out = subprocess.run(["pdftotext", "-enc", "UTF-8", str(path), "-"],
+                             capture_output=True, text=True, timeout=120)
+        if out.returncode:
+            print(f"Skipping {path.name}: {out.stderr.strip()}", file=sys.stderr)
+            return []
+        return [(i + 1, page) for i, page in enumerate(out.stdout.split("\f")) if page.strip()]
+    text = path.read_text(errors="replace")
+    return [(None, clean_markdown(text) if path.suffix.lower() == ".md" else text)]
+
+
+def load_library():
+    files = sorted(p for folder, exts in LIBRARY_SOURCES if folder.exists()
+                   for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in exts)
+    chunks = []
+    for path in files:
+        raw = path.read_text(errors="replace") if path.suffix.lower() == ".md" else ""
+        heading = re.search(r"^#\s+(.+)$", raw, re.M)
+        title = heading.group(1).strip() if heading else path.stem.replace("-", " ").replace("_", " ")
+        rel = str(path.relative_to(ROOT.parent))
+        n = 0
+        for page, text in read_pages(path):
+            for body in chunk(text):
+                n += 1
+                tf = Counter(tokenize(f"{title} {body}"))
+                chunks.append({"id": f"{path.stem}#{n}", "type": "research", "title": title, "dept": rel,
+                               "date": None, "page": page, "superseded_by": None, "body": body,
+                               "tf": tf, "len": sum(tf.values())})
+    return chunks
 
 
 def load_rules():
@@ -165,16 +239,17 @@ def bm25(query, docs, k1=1.5, b=0.75):
     terms = tokenize(query)
     n = len(docs)
     avgdl = sum(d["len"] for d in docs) / n
+    idf = {}
+    for t in set(terms):
+        df = sum(1 for x in docs if t in x["tf"])
+        idf[t] = math.log(1 + (n - df + 0.5) / (df + 0.5))
     scored = []
     for d in docs:
         score = 0.0
         for t in terms:
             tf = d["tf"].get(t, 0)
-            if not tf:
-                continue
-            df = sum(1 for x in docs if t in x["tf"])
-            idf = math.log(1 + (n - df + 0.5) / (df + 0.5))
-            score += idf * tf * (k1 + 1) / (tf + k1 * (1 - b + b * d["len"] / avgdl))
+            if tf:
+                score += idf[t] * tf * (k1 + 1) / (tf + k1 * (1 - b + b * d["len"] / avgdl))
         scored.append((score, d))
     scored.sort(key=lambda x: -x[0])
     return scored
@@ -188,11 +263,18 @@ def best_current(ranked):
     return 0.0, None
 
 
-def coverage(query, doc):
+def coverage(query, doc, docs):
+    """IDF-weighted share of the query's terms found in doc. Weighting matters on broad corpora:
+    matching common words ('policy', 'work') must not outweigh missing the specific one ('home')."""
     terms = set(tokenize(query))
     matched = sorted(t for t in terms if doc and t in doc["tf"])
     missing = sorted(terms - set(matched))
-    return (len(matched) / len(terms) if terms else 0.0), matched, missing
+    if not terms:
+        return 0.0, matched, missing
+    n = len(docs)
+    weight = {t: math.log(1 + (n - df + 0.5) / (df + 0.5))
+              for t in terms for df in [sum(1 for x in docs if t in x["tf"])]}
+    return sum(weight[t] for t in matched) / sum(weight.values()), matched, missing
 
 
 def extract(query, doc, limit=600):
@@ -204,18 +286,20 @@ def extract(query, doc, limit=600):
     cands = [p for i, p in enumerate(paras)
              if not p.startswith("Interviewer:") and not (i == 0 and p.startswith("This circular"))] or paras
     best = max(range(len(cands)), key=lambda i: len(terms & set(tokenize(cands[i]))))
-    out = cands[best]
+    out = [cands[best]]
     for p in cands[best + 1:]:
-        if len(out) + len(p) > limit:
+        if sum(map(len, out)) + len(p) > limit:
             break
-        out += "\n\n" + p
-    return re.sub(r"^Officer:\s*", "", out, flags=re.M)
+        out.append(p)
+    while len(out) > 1 and is_heading(out[-1]):  # a trailing heading introduces text we did not include
+        out.pop()
+    return re.sub(r"^Officer:\s*", "", "\n\n".join(out), flags=re.M)
 
 
 def source_info(doc, by_id):
     if not doc:
         return None
-    info = {k: doc.get(k) for k in ("id", "type", "title", "dept", "date", "officer")}
+    info = {k: doc.get(k) for k in ("id", "type", "title", "dept", "date", "officer", "page")}
     sup = doc.get("supersedes")
     info["supersedes"] = {"id": sup, "title": by_id[sup]["title"], "date": by_id[sup]["date"]} if sup in by_id else None
     return info
@@ -245,9 +329,10 @@ def answer(query, docs, rules):
                            "superseded_by": d.get("superseded_by")}
                           for s, d in ranked[:5] if s > 0]
     _, doc = best_current(ranked)
-    conf, matched, missing = coverage(query, doc)
+    conf, matched, missing = coverage(query, doc, docs)
     trace["confidence"] = {"value": round(conf, 2), "threshold": THRESHOLD, "pass": conf >= THRESHOLD,
-                           "matched": matched, "missing": missing, "note": "share of query terms found in top source"}
+                           "matched": matched, "missing": missing,
+                           "note": "share of the question's key terms found in the top source, rarer terms weighted higher"}
 
     if conf < THRESHOLD:
         trace.update(refused=True, answer=REFUSAL, source=None)
@@ -284,7 +369,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             self._send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
         elif path == "/api/status":
-            status = {"documents": len(DOCS), "rules": len(RULES), "llm": llm_provider()}
+            status = {"llm": llm_provider(), "rules": len(RULES),
+                      "corpora": {"circulars": {"documents": len(CORPORA["circulars"])},
+                                  "library": {"documents": len({d["dept"] for d in CORPORA["library"]}),
+                                              "passages": len(CORPORA["library"])}}}
             self._send(200, json.dumps(status), "application/json")
         elif path == "/api/audit":
             with sqlite3.connect(DB_PATH) as db:
@@ -305,10 +393,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.path.split("?", 1)[0] != "/api/query":
             return self._send(404, "not found", "text/plain")
         length = int(self.headers.get("Content-Length", 0))
-        query = json.loads(self.rfile.read(length) or b"{}").get("query", "").strip()[:500]
+        body = json.loads(self.rfile.read(length) or b"{}")
+        query = str(body.get("query", "")).strip()[:500]
+        corpus = body.get("corpus", "circulars")
         if not query:
             return self._send(400, json.dumps({"error": "empty query"}), "application/json")
-        self._send(200, json.dumps(answer(query, DOCS, RULES)), "application/json")
+        if corpus not in CORPORA or not CORPORA[corpus]:
+            return self._send(400, json.dumps({"error": f"unknown or empty corpus: {corpus}"}), "application/json")
+        # The rule table holds circular facts; it does not apply to the research library.
+        rules = RULES if corpus == "circulars" else []
+        self._send(200, json.dumps(answer(query, CORPORA[corpus], rules)), "application/json")
 
 
 def selftest():
@@ -324,7 +418,7 @@ def selftest():
     assert top["id"] == "SC-5-2022", top["id"]
 
     _, top = best_current(bm25("What is the work-from-home policy?", docs))
-    assert coverage("What is the work-from-home policy?", top)[0] < THRESHOLD
+    assert coverage("What is the work-from-home policy?", top, docs)[0] < THRESHOLD
 
     ranked = bm25("direct procurement limit", docs)
     assert {"SC-3-2022", "SC-7-2024"} <= {d["id"] for _, d in ranked[:3]}, "both versions should be retrieved"
@@ -338,16 +432,27 @@ def selftest():
     q = "How do I apply for annual leave?"
     assert "Step 1" in extract(q, best_current(bm25(q, docs))[1])
 
-    print(f"selftest OK ({len(docs)} documents, {len(rules)} rules)")
+    lib = load_library()
+    assert len(lib) > 50, "research library should be chunked into passages"
+    assert all(len(c["body"].split()) <= CHUNK_WORDS * 3 for c in lib), "a passage is unreasonably long"
+    _, top = best_current(bm25("What are the failure points of RAG systems?", lib))
+    assert top["id"].startswith("03-seven-failure-points"), top["id"]
+    q = "What is the work-from-home policy?"
+    assert coverage(q, best_current(bm25(q, lib))[1], lib)[0] < THRESHOLD, "common words must not pass the gate"
+
+    print(f"selftest OK ({len(docs)} documents, {len(rules)} rules, {len(lib)} library passages)")
 
 
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
         sys.exit()
-    DOCS, RULES = load_corpus(), load_rules()
+    CORPORA, RULES = {"circulars": load_corpus(), "library": load_library()}, load_rules()
+    DOCS = CORPORA["circulars"]
     port = int(os.environ.get("PORT", 8000))
     llm = {"bedrock": "Amazon Bedrock", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
-    print(f"WAWASAN demo: {len(DOCS)} documents, {len(RULES)} rules, LLM: {llm}")
+    lib = CORPORA["library"]
+    print(f"WAWASAN demo: {len(DOCS)} circulars, {len(RULES)} rules, "
+          f"library {len({d['dept'] for d in lib})} files / {len(lib)} passages, LLM: {llm}")
     print(f"http://localhost:{port}")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

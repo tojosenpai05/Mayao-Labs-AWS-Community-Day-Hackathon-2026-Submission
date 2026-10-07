@@ -40,6 +40,14 @@ The other two scenarios are in [`demo/screenshots/`](demo/screenshots/).
 
 **All five work with no LLM at all.** Without an API key, scenarios 2 and 5 fall back to quoting the best-matching passage of the cited source. An LLM only rewrites that passage into a summary. This is a design choice rather than a workaround: policy facts should never depend on a model guessing, and a demo should not depend on conference wifi.
 
+## Research library: real documents
+
+The **Research library** tab runs the same pipeline over real documents: the team's 18 research notes in [`research/`](research/), which summarise and cite the published studies behind this project. Long documents are split into ~180-word passages, so every answer cites the exact passage rather than a whole paper. Any **PDF dropped into `demo/library/`** is indexed too on the next restart, with page-level citations (text is extracted by `pdftotext` from poppler-utils).
+
+![Research library](demo/screenshots/6-research-library.png)
+
+The rule engine and supersession checks apply only to the circulars. The confidence gate works on both, so questions the research doesn't cover are still refused.
+
 ## How it works
 
 ```
@@ -50,7 +58,7 @@ Query → Router ─┬─ FACTUAL ──────→ Rule engine ───�
 - **Router.** Questions containing structured-fact markers (*grade, entitlement, limit, rate…*) go to the rule engine. *Why* questions always go to retrieval, because a lookup table cannot explain a rationale.
 - **Rule engine.** A table of exact values, each pointing at the circular it came from.
 - **BM25 retrieval** over the document corpus. Superseded documents are still retrieved but never used as the answer.
-- **Confidence gate.** This is the share of the question's key terms that appear in the top source. Below 0.60, the system refuses before any LLM call is made.
+- **Confidence gate.** This is the share of the question's key terms that appear in the top source, with rarer, more specific terms weighted higher. Below 0.50, the system refuses before any LLM call is made.
 - **Audit log.** Every query, answer, source and confidence score is recorded.
 
 ## Run it
@@ -168,4 +176,4 @@ The demo runs locally. Each component maps one-to-one onto AWS, and the four fun
 
 ## Note on the demo data
 
-Every document in `demo/corpus/` was written for this demo. The circular numbers, values and interviewed officers are **fictional** and do not represent actual Sarawak government policy or real people.
+Every document in `demo/corpus/` was written for this demo. The circular numbers, values and interviewed officers are **fictional** and do not represent actual Sarawak government policy or real people. The research library, by contrast, is the team's real research notes.

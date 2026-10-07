@@ -57,6 +57,9 @@ button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid 
 .presets button { background: var(--bg); color: var(--ink); padding: 6px 12px 6px 7px; font-size: 13px;
   display: inline-flex; align-items: center; gap: 7px; border-radius: 99px; }
 .presets button:hover, .presets button:focus-visible { border-color: var(--accent); outline: none; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin-bottom: 14px; background: var(--bg); }
+.seg button { border: 0; background: none; color: var(--muted); padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 600; }
+.seg button[aria-selected=true] { background: var(--panel); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
 kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); color: var(--accent);
   border-radius: 5px; padding: 4px 6px; }
 
@@ -190,6 +193,10 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
   </header>
 
   <section class="panel">
+    <div class="seg" id="seg" role="tablist" aria-label="Corpus">
+      <button type="button" role="tab" data-c="circulars">Government circulars</button>
+      <button type="button" role="tab" data-c="library">Research library</button>
+    </div>
     <label class="ask-label" for="q">What do you need to know?</label>
     <form id="f">
       <input id="q" type="text" autocomplete="off" placeholder="e.g. How do I apply for annual leave?">
@@ -234,26 +241,48 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 </main>
 
 <script>
-const PRESETS = [
-  ["Deterministic fact", "What is the annual leave entitlement for Grade 41?"],
-  ["Cited answer", "How do I apply for annual leave?"],
-  ["Out-of-corpus refusal", "What is the work-from-home policy?"],
-  ["Version supersession", "What is the direct procurement limit?"],
-  ["Institutional memory", "Why was the procurement threshold raised in 2024?"],
-];
+const PRESET_SETS = {
+  circulars: [
+    ["Deterministic fact", "What is the annual leave entitlement for Grade 41?"],
+    ["Cited answer", "How do I apply for annual leave?"],
+    ["Out-of-corpus refusal", "What is the work-from-home policy?"],
+    ["Version supersession", "What is the direct procurement limit?"],
+    ["Institutional memory", "Why was the procurement threshold raised in 2024?"],
+  ],
+  library: [
+    ["RAG failure points", "What are the failure points of RAG systems?"],
+    ["Malaysia adoption gap", "Why is DDMS adoption in Malaysia still low?"],
+    ["Sarawak records", "What records management problems did Sarawak agencies have?"],
+    ["Out-of-corpus refusal", "What is the work-from-home policy?"],
+  ],
+};
+const PLACEHOLDER = { circulars: "e.g. How do I apply for annual leave?", library: "e.g. Why do RAG systems fail on government documents?" };
+const params = new URLSearchParams(location.search);
+let corpus = PRESET_SETS[params.get("corpus")] ? params.get("corpus") : "circulars";
+let PRESETS = PRESET_SETS[corpus];
+let STATUS = null;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
 const LLM_NAME = { bedrock: "Bedrock", groq: "Groq" };
-const START = `<div class="start"><p>Ask about any policy in the corpus, or press <kbd>1</kbd>–<kbd>5</kbd> for a demo scenario.</p>
+const START = {
+  circulars: `<div class="start"><p>Ask about any policy in the corpus, or press <kbd>1</kbd>–<kbd>5</kbd> for a demo scenario.</p>
   <div class="cats">
     <div><b>Leave &amp; HR</b><span>Annual, medical, study leave; acting posts</span></div>
     <div><b>Procurement</b><span>Direct procurement limits and their history</span></div>
     <div><b>Claims &amp; allowances</b><span>Travel, mileage, overtime</span></div>
     <div><b>Records &amp; governance</b><span>Retention, minutes, discipline</span></div>
-  </div></div>`;
-$("#answer").innerHTML = START;
+  </div></div>`,
+  library: `<div class="start"><p>Searches the team's real research notes, split into passages so every answer cites the exact passage.
+  Press <kbd>1</kbd>–<kbd>4</kbd> for an example, or drop PDFs into <code>demo/library/</code> and restart to index them too.</p>
+  <div class="cats">
+    <div><b>Knowledge management</b><span>Fragmentation, silos, outdated guidelines</span></div>
+    <div><b>RAG systems</b><span>Failure points, hybrid retrieval, hallucination</span></div>
+    <div><b>Malaysia</b><span>DDMS, e-government adoption</span></div>
+    <div><b>Sarawak</b><span>Records management, SDEB 2030, Dayang</span></div>
+  </div></div>`,
+};
 
 function setNode(id, state, cap) {
   const n = $("#n-" + id);
@@ -261,14 +290,28 @@ function setNode(id, state, cap) {
   n.querySelector(".cap").textContent = cap || "";
 }
 
-PRESETS.forEach(([label, q], i) => {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.innerHTML = `<kbd>${i + 1}</kbd>${esc(label)}`;
-  b.title = q;
-  b.onclick = () => { $("#q").value = q; run(q); };
-  $("#presets").appendChild(b);
-});
+function setCorpus(c) {
+  corpus = c;
+  PRESETS = PRESET_SETS[c];
+  document.querySelectorAll("#seg button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.c === c)));
+  $("#presets").innerHTML = "";
+  PRESETS.forEach(([label, q], i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `<kbd>${i + 1}</kbd>${esc(label)}`;
+    b.title = q;
+    b.onclick = () => { $("#q").value = q; run(q); };
+    $("#presets").appendChild(b);
+  });
+  $("#q").placeholder = PLACEHOLDER[c];
+  $("#answer").innerHTML = START[c];
+  $("#hits").innerHTML = '<p class="empty">Ranked sources will appear here.</p>';
+  $("#conf").innerHTML = '<p class="empty">Matched and missing key terms will appear here.</p>';
+  STAGES.forEach((s) => setNode(s, "", ""));
+  renderStatus();
+}
+document.querySelectorAll("#seg button").forEach((b) => b.onclick = () => { if (!running) setCorpus(b.dataset.c); });
+setCorpus(corpus);
 $("#f").onsubmit = (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) run(q); };
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -291,7 +334,7 @@ async function run(q) {
   setNode("classify", "busy", "classifying");
   let t;
   try {
-    const r = await fetch("/api/query", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+    const r = await fetch("/api/query", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q, corpus }) });
     t = await r.json();
     if (!r.ok) throw new Error(t.error || r.status);
   } catch (err) {
@@ -362,11 +405,13 @@ function render(t) {
     </div>`;
   } else if (t.source) {
     const s = t.source;
-    const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>' : '<span class="tag">Circular</span>';
+    const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>'
+      : s.type === "research" ? '<span class="tag int">Research passage</span>' : '<span class="tag">Circular</span>';
+    const meta = [s.id, s.page ? `p. ${s.page}` : null, s.dept, s.date].filter(Boolean).map(esc).join(" · ");
     html += `<p class="answer">${esc(t.answer)}<sup>[1]</sup></p>
       <div class="cite"><span class="n">[1]</span><div>
         <div class="t">${esc(s.title)} ${kind}</div>
-        <div>${esc(s.id)} · ${esc(s.dept)} · ${esc(s.date)}</div>
+        <div>${meta}</div>
         ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
         ${factualHit ? "<div>Answered from the structured rule table, sourced from this circular.</div>" : ""}
       </div></div>`;
@@ -388,7 +433,8 @@ function render(t) {
     $("#hits").innerHTML = '<ul class="cards">' + t.retrieval.map((h, i) => {
       const chosen = !t.refused && t.source && h.id === t.source.id;
       const cls = h.superseded_by ? "old" : chosen ? "chosen" : "";
-      const tags = (h.type === "interview" ? '<span class="tag int">Interview</span>' : '<span class="tag">Circular</span>') +
+      const tags = (h.type === "interview" ? '<span class="tag int">Interview</span>'
+          : h.type === "research" ? '<span class="tag int">Research</span>' : '<span class="tag">Circular</span>') +
         (h.superseded_by ? `<span class="tag old">Outdated · replaced by ${esc(h.superseded_by)}</span>` : "") +
         (chosen ? '<span class="tag src">✓ Used as source</span>' : "");
       return `<li class="${cls}"><div class="top"><span class="rank">#${i + 1}</span><span class="id">${esc(h.id)}</span>${tags}
@@ -422,12 +468,19 @@ async function loadAudit() {
   } catch { /* audit view is non-critical */ }
 }
 
+function renderStatus() {
+  if (!STATUS) return;
+  const llm = STATUS.llm ? LLM_NAME[STATUS.llm] : "No LLM · quoting sources";
+  const c = STATUS.corpora;
+  const what = corpus === "library"
+    ? `${c.library.documents} research files · ${c.library.passages} passages`
+    : `${c.circulars.documents} documents · ${STATUS.rules} rules`;
+  $("#status").innerHTML = `<i></i>${what} · ${esc(llm)}`;
+}
+
 async function loadStatus() {
-  try {
-    const s = await (await fetch("/api/status")).json();
-    const llm = s.llm ? LLM_NAME[s.llm] : "No LLM · quoting sources";
-    $("#status").innerHTML = `<i></i>${s.documents} documents · ${s.rules} rules · ${esc(llm)}`;
-  } catch { $("#status").textContent = "Offline"; }
+  try { STATUS = await (await fetch("/api/status")).json(); renderStatus(); }
+  catch { $("#status").textContent = "Offline"; }
 }
 
 loadStatus();

@@ -93,11 +93,13 @@ Exact answers for structured facts, each pointing at its source circular. The LL
 
 ### Step 6 — Confidence gate (SOL-06)
 
-The confidence score is the **share of the question's key terms found in the top non-superseded source**. If it is below **0.60**, the system replies *"Information not available in the system"* **before any LLM call is made**.
+The confidence score is the **share of the question's key terms found in the top non-superseded source, with each term weighted by how rare it is (IDF)**. If it is below **0.50**, the system replies *"Information not available in the system"* **before any LLM call is made**.
 
-Example: *"What is the work-from-home policy?"* matches only *work* (in the overtime circular). That is 1 of 3 terms, so confidence is 0.33 and the question is refused.
+Example: *"What is the work-from-home policy?"* matches only *work* (in the overtime circular). *Home* is the rarest and most specific term, and it is missing, so confidence is 0.26 and the question is refused.
 
-This is deliberately simple and explainable: a judge or an officer can see exactly which terms were missing. With hybrid retrieval in production, embedding similarity can be added as a second signal.
+The weighting matters on broader corpora. With equal weights, the research library let that question through: *work* and *policy* are common there, and matching them outweighed missing *home*.
+
+This is deliberately simple and explainable: a judge or an officer can see exactly which terms were missing. Its known limit is paraphrase. *"Who approves study leave?"* is refused because the circular says *approval*, not *approves*. A false refusal is the safer failure for policy answers. Embedding similarity, added with hybrid retrieval in production, fixes this.
 
 ### Step 7 — Answer generation
 
