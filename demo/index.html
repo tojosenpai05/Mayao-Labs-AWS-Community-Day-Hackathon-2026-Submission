@@ -20,31 +20,57 @@
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink);
+body { margin: 0; background: var(--bg); color: var(--ink); border-top: 3px solid var(--accent);
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
-header h1 { margin: 0; font-size: 26px; letter-spacing: .5px; }
-header p { margin: 4px 0 0; color: var(--muted); }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 16px 48px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
 section { margin-top: 18px; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 10px; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 0 0 12px; font-weight: 650; }
 
-form { display: flex; gap: 8px; }
-input[type=text] { flex: 1; min-width: 0; padding: 12px 14px; font: inherit; color: var(--ink);
-  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
-button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); }
-.ask { padding: 0 20px; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+/* Header */
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 30px; height: 30px; color: var(--accent); flex: none; }
+.brand h1 { margin: 0; font-size: 24px; letter-spacing: .5px; }
+.tagline { margin: 6px 0 0; color: var(--muted); }
+.status { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px;
+  padding: 4px 11px; background: var(--panel); white-space: nowrap; }
+.status i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  margin-right: 6px; vertical-align: 1px; }
+
+/* Search hero */
+.ask-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 650;
+  display: block; margin-bottom: 8px; }
+form { display: flex; gap: 10px; }
+input[type=text] { flex: 1; min-width: 0; padding: 16px 20px; font: inherit; font-size: 17px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px; outline: none; }
+input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+button { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--line); }
+.ask { padding: 0 24px; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 650;
+  display: inline-flex; align-items: center; gap: 8px; }
+.ask:disabled { opacity: .75; cursor: progress; }
+.spin { display: none; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite; }
+.ask:disabled .spin { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.presets button { background: var(--bg); color: var(--ink); padding: 6px 10px; font-size: 13px; text-align: left; }
-.presets button b { color: var(--accent); margin-right: 4px; }
+.presets button { background: var(--bg); color: var(--ink); padding: 6px 12px 6px 7px; font-size: 13px;
+  display: inline-flex; align-items: center; gap: 7px; border-radius: 99px; }
+.presets button:hover, .presets button:focus-visible { border-color: var(--accent); outline: none; }
+kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); color: var(--accent);
+  border-radius: 5px; padding: 4px 6px; }
 
 /* Pipeline */
 .pipe { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto auto; gap: 14px 26px; }
 .node { position: relative; background: var(--idle); border: 2px solid transparent; border-radius: 10px;
-  padding: 10px; min-height: 74px; transition: all .25s; display: flex; flex-direction: column; justify-content: center; }
+  padding: 10px 10px 10px 13px; min-height: 74px; transition: background .25s, border-color .25s, opacity .25s;
+  display: flex; flex-direction: column; justify-content: center; cursor: help; }
 .node .name { font-weight: 650; font-size: 14px; }
 .node .cap { font-size: 12px; color: var(--muted); margin-top: 3px; min-height: 18px; overflow-wrap: anywhere; }
-.node .lane { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
+.node .lane { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+#n-rule .lane { color: var(--fact); } #n-retrieve .lane { color: var(--accent); }
+#n-rule { box-shadow: inset 4px 0 0 var(--fact); }
+#n-retrieve, #n-gate, #n-llm { box-shadow: inset 4px 0 0 var(--accent); }
 .node:not(.last)::after { content: "›"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%);
   color: var(--muted); font-size: 22px; }
 .span2 { grid-row: 1 / span 2; }
@@ -56,53 +82,85 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid v
 .node[data-s=fact] { background: var(--fact-soft); border-color: var(--fact); }
 .node[data-s=block] { background: var(--bad-soft); border-color: var(--bad); }
 .node[data-s=warn] { background: var(--warn-soft); border-color: var(--warn); }
-.node[data-s=skip] { opacity: .45; border: 2px dashed var(--line); }
+.node[data-s=skip] { opacity: .3; border: 2px dashed var(--line); }
 .node[data-s=busy] { border-color: var(--accent); animation: pulse .8s infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
-@media (prefers-reduced-motion: reduce) { .node { transition: none; } .node[data-s=busy] { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .node { transition: none; } .node[data-s=busy], .spin { animation: none; }
+}
 
 /* Results */
 .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; }
-.answer { font-size: 16px; white-space: pre-wrap; margin: 4px 0 12px; }
-.answer.refused { color: var(--bad); font-weight: 600; }
-.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .badge { font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 99px;
   background: var(--idle); color: var(--muted); text-transform: uppercase; }
 .badge.ok { background: var(--accent-soft); color: var(--accent); }
 .badge.fact { background: var(--fact-soft); color: var(--fact); }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }
 .badge.warn { background: var(--warn-soft); color: var(--warn); }
-.source { border-top: 1px solid var(--line); padding-top: 10px; font-size: 13px; color: var(--muted); }
-.source .t { color: var(--ink); font-weight: 600; font-size: 14px; }
-.supersede { margin-top: 8px; padding: 8px 10px; border-left: 3px solid var(--warn); background: var(--warn-soft);
-  color: var(--ink); font-size: 13px; border-radius: 4px; }
-.why { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.confrow { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.confrow .meter { flex: 1; margin: 0; }
+.confrow b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.answer { font-size: 16.5px; line-height: 1.7; white-space: pre-wrap; margin: 0 0 14px; }
+.answer sup { color: var(--accent); font-weight: 700; font-size: 12px; margin-left: 2px; }
+.cite { border-top: 1px solid var(--line); padding-top: 10px; font-size: 13px; color: var(--muted); display: flex; gap: 8px; }
+.cite .n { color: var(--accent); font-weight: 700; }
+.cite .t { color: var(--ink); font-weight: 600; font-size: 14px; }
+.banner { margin-top: 14px; border: 1px solid var(--warn); background: var(--warn-soft); border-radius: 10px; padding: 12px 14px; }
+.banner .h { color: var(--warn); font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+.ba { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 13px; }
+.ba .old { color: var(--muted); }
+.ba .old .v { text-decoration: line-through; }
+.ba .v { display: block; font-size: 15px; font-weight: 650; color: var(--ink); }
+.ba .old .v { color: var(--muted); }
+.ba .arrow { color: var(--warn); font-size: 18px; }
+.refused { border: 1px dashed var(--bad); background: var(--bad-soft); border-radius: 12px; padding: 22px; text-align: center; }
+.refused .icon { width: 40px; height: 40px; margin: 0 auto 8px; color: var(--bad); }
+.refused h3 { margin: 0 0 6px; font-size: 17px; color: var(--bad); }
+.refused p { margin: 6px 0; font-size: 14px; }
+.refused .next { margin-top: 12px; font-size: 13px; color: var(--muted); }
 
-.hits { list-style: none; margin: 0; padding: 0; }
-.hits li { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
-.hits li:last-child { border: 0; }
-.hits .row { display: flex; justify-content: space-between; gap: 8px; }
-.hits .bar { height: 5px; background: var(--accent); border-radius: 3px; margin-top: 4px; }
-.hits li.chosen .id { font-weight: 700; }
-.hits li.old .id, .hits li.old .ttl { text-decoration: line-through; color: var(--muted); }
-.hits li.old .bar { background: var(--line); }
-.tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 4px;
-  background: var(--idle); color: var(--muted); text-transform: uppercase; }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cards li { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; font-size: 13px; }
+.cards li.chosen { border-color: var(--accent); background: var(--accent-soft); }
+.cards li.old { background: var(--idle); }
+.cards li.old .id, .cards li.old .ttl { text-decoration: line-through; color: var(--muted); }
+.cards .top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.cards .rank { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 22px; }
+.cards .id { font-weight: 650; }
+.cards .score { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cards .ttl { color: var(--muted); margin: 2px 0 0 29px; }
+.cards .bar { height: 4px; background: var(--accent); border-radius: 3px; margin: 6px 0 0 29px; }
+.cards li.old .bar { background: var(--line); }
+.tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: var(--idle); color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
 .tag.int { background: var(--fact-soft); color: var(--fact); }
 .tag.old { background: var(--warn-soft); color: var(--warn); }
-.meter { position: relative; height: 12px; background: var(--idle); border-radius: 6px; margin: 8px 0; }
+.tag.src { background: var(--accent); color: var(--panel); }
+.meter { position: relative; height: 10px; background: var(--idle); border-radius: 6px; margin: 8px 0; }
 .meter i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--accent); }
 .meter i.low { background: var(--bad); }
 .meter b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
 .chips span { display: inline-block; font-size: 12px; padding: 1px 7px; margin: 2px 3px 0 0; border-radius: 4px; }
 .chips .y { background: var(--accent-soft); color: var(--accent); }
 .chips .n { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; }
-.empty { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); font-size: 13px; margin: 0; }
+.start p { margin: 0 0 10px; color: var(--muted); }
+.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cats div { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.cats b { display: block; font-size: 14px; }
+.cats span { color: var(--muted); }
 
+/* Audit */
+.summary { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.summary b { display: block; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.scroll { overflow: auto; max-height: 320px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-weight: 600; }
-.scroll { overflow-x: auto; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+td.num { font-variant-numeric: tabular-nums; }
+.c-hi { color: var(--accent); font-weight: 650; } .c-mid { color: var(--warn); font-weight: 650; } .c-lo { color: var(--bad); font-weight: 650; }
+td a { color: var(--muted); text-decoration: none; } td a:hover { color: var(--accent); }
 footer { margin-top: 18px; font-size: 13px; color: var(--muted); }
 footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 
@@ -110,50 +168,62 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
   .pipe { grid-template-columns: 1fr; }
   .pipe .node { grid-column: 1 !important; grid-row: auto !important; }
   .node:not(.last)::after { content: "⌄"; right: auto; left: 50%; top: auto; bottom: -21px; transform: translateX(-50%); }
-  .grid2 { grid-template-columns: 1fr; }
+  .grid2, .cats { grid-template-columns: 1fr; }
+  .ba { grid-template-columns: 1fr; } .ba .arrow { transform: rotate(90deg); justify-self: start; }
+  .ask { padding: 0 16px; }
 }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>WAWASAN</h1>
-    <p>Internal knowledge assistant for Sarawak civil servants: cited answers from policies, circulars and captured institutional memory.</p>
+    <div>
+      <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>
+        </svg>
+        <h1>WAWASAN</h1>
+      </div>
+      <p class="tagline">Internal knowledge assistant for Sarawak civil servants: cited, version-aware answers from policies, circulars and captured institutional memory.</p>
+    </div>
+    <span class="status" id="status"><i></i>Connecting…</span>
   </header>
 
   <section class="panel">
+    <label class="ask-label" for="q">What do you need to know?</label>
     <form id="f">
-      <input id="q" type="text" autocomplete="off" placeholder="Ask about leave, procurement, claims, records..." aria-label="Question">
-      <button class="ask" type="submit">Ask</button>
+      <input id="q" type="text" autocomplete="off" placeholder="e.g. How do I apply for annual leave?">
+      <button class="ask" id="askbtn" type="submit"><span class="spin" aria-hidden="true"></span><span id="asktext">Ask</span></button>
     </form>
-    <div class="presets" id="presets"></div>
+    <div class="presets" id="presets" aria-label="Demo scenarios (keys 1 to 5)"></div>
   </section>
 
   <section class="panel">
     <h2>Pipeline</h2>
     <div class="pipe">
-      <div class="node span2" id="n-query"><span class="name">1 · Query</span><span class="cap"></span></div>
-      <div class="node span2" id="n-classify"><span class="name">2 · Router</span><span class="cap"></span></div>
-      <div class="node" id="n-rule"><span class="lane">FACTUAL LANE</span><span class="name">3 · Rule engine</span><span class="cap"></span></div>
-      <div class="node" id="n-retrieve"><span class="lane">INTERPRETIVE LANE</span><span class="name">3 · BM25 retrieval</span><span class="cap"></span></div>
-      <div class="node" id="n-gate"><span class="name">4 · Confidence gate</span><span class="cap"></span></div>
-      <div class="node" id="n-llm"><span class="name">5 · LLM</span><span class="cap"></span></div>
-      <div class="node span2" id="n-answer"><span class="name">6 · Answer + citation</span><span class="cap"></span></div>
-      <div class="node span2 last" id="n-audit"><span class="name">7 · Audit log</span><span class="cap"></span></div>
+      <div class="node span2" id="n-query" title="The officer's question, in plain English."><span class="name">1 · Query</span><span class="cap"></span></div>
+      <div class="node span2" id="n-classify" title="Decides whether this is a structured fact (rule engine) or needs document retrieval. 'Why' questions always go to retrieval."><span class="name">2 · Router</span><span class="cap"></span></div>
+      <div class="node" id="n-rule" title="Exact values from a curated rule table. Deterministic: no LLM is involved."><span class="lane">FACTUAL LANE</span><span class="name">3 · Rule engine</span><span class="cap"></span></div>
+      <div class="node" id="n-retrieve" title="BM25 keyword ranking over every circular and knowledge interview. Superseded circulars are retrieved but never used as the answer."><span class="lane">INTERPRETIVE LANE</span><span class="name">3 · BM25 retrieval</span><span class="cap"></span></div>
+      <div class="node" id="n-gate" title="Share of the question's key terms found in the top source. Below the threshold, the system refuses before calling any LLM."><span class="name">4 · Confidence gate</span><span class="cap"></span></div>
+      <div class="node" id="n-llm" title="Writes the answer from the cited source only. Without an LLM, the best-matching passage is quoted instead."><span class="name">5 · LLM</span><span class="cap"></span></div>
+      <div class="node span2" id="n-answer" title="Answer with its source document, version date and owning department."><span class="name">6 · Answer + citation</span><span class="cap"></span></div>
+      <div class="node span2 last" id="n-audit" title="Every query, answer, source and confidence score is recorded."><span class="name">7 · Audit log</span><span class="cap"></span></div>
     </div>
   </section>
 
   <section class="grid2">
-    <div class="panel"><h2>Answer</h2><div id="answer"><p class="empty">Pick a scenario above or ask a question.</p></div></div>
+    <div class="panel"><h2>Answer</h2><div id="answer"></div></div>
     <div class="panel">
-      <h2>Retrieval</h2><div id="hits"><p class="empty">No retrieval yet.</p></div>
-      <h2 style="margin-top:16px">Confidence</h2><div id="conf"><p class="empty">No confidence check yet.</p></div>
+      <h2>Retrieval</h2><div id="hits"><p class="empty">Ranked sources will appear here.</p></div>
+      <h2 style="margin-top:18px">Why this confidence</h2><div id="conf"><p class="empty">Matched and missing key terms will appear here.</p></div>
     </div>
   </section>
 
   <section class="panel">
     <h2>Audit log</h2>
-    <div class="scroll"><table><thead><tr><th>#</th><th>Time</th><th>Query</th><th>Route</th><th>Source</th><th>Conf.</th></tr></thead>
+    <div class="summary" id="summary"></div>
+    <div class="scroll"><table><thead><tr><th>#</th><th>Time</th><th>Query</th><th>Route</th><th>Source</th><th>Conf.</th><th></th></tr></thead>
     <tbody id="audit"></tbody></table></div>
   </section>
 
@@ -175,6 +245,15 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
+const LLM_NAME = { bedrock: "Bedrock", groq: "Groq" };
+const START = `<div class="start"><p>Ask about any policy in the corpus, or press <kbd>1</kbd>–<kbd>5</kbd> for a demo scenario.</p>
+  <div class="cats">
+    <div><b>Leave &amp; HR</b><span>Annual, medical, study leave; acting posts</span></div>
+    <div><b>Procurement</b><span>Direct procurement limits and their history</span></div>
+    <div><b>Claims &amp; allowances</b><span>Travel, mileage, overtime</span></div>
+    <div><b>Records &amp; governance</b><span>Retention, minutes, discipline</span></div>
+  </div></div>`;
+$("#answer").innerHTML = START;
 
 function setNode(id, state, cap) {
   const n = $("#n-" + id);
@@ -185,19 +264,29 @@ function setNode(id, state, cap) {
 PRESETS.forEach(([label, q], i) => {
   const b = document.createElement("button");
   b.type = "button";
-  b.innerHTML = `<b>${i + 1}</b>${esc(label)}`;
+  b.innerHTML = `<kbd>${i + 1}</kbd>${esc(label)}`;
   b.title = q;
   b.onclick = () => { $("#q").value = q; run(q); };
   $("#presets").appendChild(b);
 });
 $("#f").onsubmit = (e) => { e.preventDefault(); const q = $("#q").value.trim(); if (q) run(q); };
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const i = Number(e.key) - 1;
+  if (i >= 0 && i < PRESETS.length) { $("#q").value = PRESETS[i][1]; run(PRESETS[i][1]); }
+});
 
 let running = false;
+function busy(on) {
+  running = on;
+  $("#askbtn").disabled = on;
+  $("#asktext").textContent = on ? "Asking" : "Ask";
+}
+
 async function run(q) {
   if (running) return;
-  running = true;
+  busy(true);
   STAGES.forEach((s) => setNode(s, "", ""));
-  $("#answer").innerHTML = '<p class="empty">Working...</p>';
   setNode("query", "done", q.length > 34 ? q.slice(0, 34) + "…" : q);
   setNode("classify", "busy", "classifying");
   let t;
@@ -207,14 +296,14 @@ async function run(q) {
     if (!r.ok) throw new Error(t.error || r.status);
   } catch (err) {
     setNode("classify", "block", "request failed");
-    $("#answer").innerHTML = `<p class="answer refused">Request failed: ${esc(err.message)}</p>`;
-    running = false;
+    $("#answer").innerHTML = `<div class="refused"><h3>Request failed</h3><p>${esc(err.message)}</p></div>`;
+    busy(false);
     return;
   }
   await animate(t);
   render(t);
   loadAudit();
-  running = false;
+  busy(false);
 }
 
 async function animate(t) {
@@ -228,14 +317,14 @@ async function animate(t) {
   } else {
     setNode("rule", factual ? "block" : "skip", factual ? "no matching rule → retrieval" : "not a structured fact");
     await sleep(step);
-    setNode("retrieve", "done", `${t.retrieval.length} documents scored`);
+    setNode("retrieve", "done", `${t.retrieval.length} documents ranked`);
     await sleep(step);
     const c = t.confidence;
     setNode("gate", c.pass ? "done" : "block", `${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} ${c.threshold.toFixed(2)}`);
     await sleep(step);
     if (t.refused) setNode("llm", "skip", "blocked by gate");
-    else if (t.llm.used) setNode("llm", "done", `${t.llm.provider === "bedrock" ? "Bedrock" : "Groq"} · ${t.llm.ms} ms`);
-    else setNode("llm", "warn", "offline: extractive");
+    else if (t.llm.used) setNode("llm", "done", `${LLM_NAME[t.llm.provider] || "LLM"} · ${t.llm.ms} ms`);
+    else setNode("llm", "warn", "offline: quoting source");
   }
   await sleep(step);
   setNode("answer", t.refused ? "block" : (factual && t.rule?.matched ? "fact" : "done"), t.refused ? "refused" : t.source?.id);
@@ -243,69 +332,105 @@ async function animate(t) {
   setNode("audit", "done", `entry #${t.audit_id}`);
 }
 
+function confRow(t, factualHit) {
+  if (factualHit) return `<div class="confrow">Confidence <b>1.00</b> · exact rule match</div>`;
+  const c = t.confidence;
+  return `<div class="confrow">Confidence <b>${c.value.toFixed(2)}</b>
+    <div class="meter"><i class="${c.pass ? "" : "low"}" style="width:${c.value * 100}%"></i><b style="left:${c.threshold * 100}%"></b></div>
+    threshold ${c.threshold.toFixed(2)} <span class="badge ${c.pass ? "ok" : "bad"}">${c.pass ? "✓ pass" : "blocked"}</span></div>`;
+}
+
 function render(t) {
   const factualHit = t.route === "FACTUAL" && t.rule?.matched;
   const badges = [`<span class="badge ${t.route === "FACTUAL" ? "fact" : "ok"}">${esc(t.route)}</span>`];
   if (!t.llm.used) badges.push('<span class="badge ok">No LLM used</span>');
-  if (t.llm.fallback && !t.refused) badges.push('<span class="badge warn">Extractive fallback</span>');
+  else badges.push(`<span class="badge ok">Generated by ${esc(LLM_NAME[t.llm.provider] || "LLM")}</span>`);
+  if (t.llm.fallback && !t.refused) badges.push('<span class="badge warn">Quoted from source</span>');
   if (t.refused) badges.push('<span class="badge bad">Refused</span>');
 
-  let html = `<div class="badges">${badges.join("")}</div>`;
-  html += `<p class="answer ${t.refused ? "refused" : ""}">${esc(t.answer)}</p>`;
+  let html = `<div class="badges">${badges.join("")}</div>` + confRow(t, factualHit);
 
   if (t.refused) {
-    html += `<div class="why">Confidence ${t.confidence.value.toFixed(2)} is below the ${t.confidence.threshold.toFixed(2)} threshold.
-      No document in the corpus covers: <b>${esc(t.confidence.missing.join(", "))}</b>. The system declines rather than guess.</div>`;
+    const c = t.confidence;
+    html += `<div class="refused">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      <h3>Cannot answer this question</h3>
+      <p>No document in the corpus covers: <b>${esc(c.missing.join(", "))}</b></p>
+      <p>Confidence ${c.value.toFixed(2)} is below the ${c.threshold.toFixed(2)} threshold, so the question was refused <b>before any LLM call</b>.</p>
+      <p class="next">What to do next: ask the owning department directly, or ask a records officer to add the relevant circular to the corpus.</p>
+    </div>`;
   } else if (t.source) {
     const s = t.source;
     const kind = s.type === "interview" ? '<span class="tag int">Knowledge interview</span>' : '<span class="tag">Circular</span>';
-    html += `<div class="source"><div class="t">${esc(s.title)} ${kind}</div>
-      <div>${esc(s.id)} · ${esc(s.dept)} · ${esc(s.date)}</div>
-      ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
-      ${factualHit ? "<div>Answered from the structured rule table, sourced from this circular.</div>" : ""}</div>`;
+    html += `<p class="answer">${esc(t.answer)}<sup>[1]</sup></p>
+      <div class="cite"><span class="n">[1]</span><div>
+        <div class="t">${esc(s.title)} ${kind}</div>
+        <div>${esc(s.id)} · ${esc(s.dept)} · ${esc(s.date)}</div>
+        ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
+        ${factualHit ? "<div>Answered from the structured rule table, sourced from this circular.</div>" : ""}
+      </div></div>`;
     if (s.supersedes) {
-      html += `<div class="supersede"><b>Version-aware:</b> supersedes ${esc(s.supersedes.id)}
-        (${esc(s.supersedes.date)})${t.rule?.previous ? `, which set it at <b>${esc(t.rule.previous)}</b>` : ""}.
-        The outdated circular is not used as an answer.</div>`;
+      const prev = t.rule?.previous;
+      html += `<div class="banner"><div class="h">⚠ Outdated circular superseded</div>
+        <div class="ba">
+          <div class="old">${prev ? `<span class="v">${esc(prev)}</span>` : ""}${esc(s.supersedes.id)} · ${esc(s.supersedes.date)} · outdated</div>
+          <div class="arrow">→</div>
+          <div>${prev ? `<span class="v">${esc(t.answer)}</span>` : ""}${esc(s.id)} · ${esc(s.date)} · current</div>
+        </div></div>`;
     }
   }
   $("#answer").innerHTML = html;
 
   if (!t.retrieval.length) {
-    $("#hits").innerHTML = `<p class="empty">${factualHit ? "Skipped: the rule engine answered deterministically." : "No document matched."}</p>`;
+    $("#hits").innerHTML = `<p class="empty">${factualHit ? "✓ The rule engine answered deterministically, so no document retrieval was needed." : "No document matched."}</p>`;
   } else {
-    $("#hits").innerHTML = '<ul class="hits">' + t.retrieval.map((h) => {
+    $("#hits").innerHTML = '<ul class="cards">' + t.retrieval.map((h, i) => {
       const chosen = !t.refused && t.source && h.id === t.source.id;
       const cls = h.superseded_by ? "old" : chosen ? "chosen" : "";
-      const tags = (h.type === "interview" ? '<span class="tag int">interview</span>' : "") +
-        (h.superseded_by ? `<span class="tag old">superseded by ${esc(h.superseded_by)}</span>` : "") +
-        (chosen ? '<span class="tag">source</span>' : "");
-      return `<li class="${cls}"><div class="row"><span><span class="id">${esc(h.id)}</span> ${tags}</span><span>${h.score.toFixed(2)}</span></div>
-        <div class="row"><span class="empty ttl">${esc(h.title)}</span></div>
-        <div class="bar" style="width:${Math.max(4, h.relative * 100)}%"></div></li>`;
+      const tags = (h.type === "interview" ? '<span class="tag int">Interview</span>' : '<span class="tag">Circular</span>') +
+        (h.superseded_by ? `<span class="tag old">Outdated · replaced by ${esc(h.superseded_by)}</span>` : "") +
+        (chosen ? '<span class="tag src">✓ Used as source</span>' : "");
+      return `<li class="${cls}"><div class="top"><span class="rank">#${i + 1}</span><span class="id">${esc(h.id)}</span>${tags}
+          <span class="score" title="BM25 relevance score (not a probability)">${h.score.toFixed(2)}</span></div>
+        <div class="ttl">${esc(h.title)}</div>
+        <div class="bar" style="width:calc(${Math.max(4, h.relative * 100)}% - 29px)"></div></li>`;
     }).join("") + "</ul>";
   }
 
   const c = t.confidence;
   if (factualHit) {
-    $("#conf").innerHTML = '<p class="empty">Exact rule match: confidence 1.00 by construction.</p>';
+    $("#conf").innerHTML = '<p class="empty">Exact rule match: confidence is 1.00 by construction.</p>';
   } else if (c) {
-    $("#conf").innerHTML = `<div>${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} threshold ${c.threshold.toFixed(2)}
-        <span class="badge ${c.pass ? "ok" : "bad"}">${c.pass ? "pass" : "blocked"}</span></div>
-      <div class="meter"><i class="${c.pass ? "" : "low"}" style="width:${c.value * 100}%"></i><b style="left:${c.threshold * 100}%"></b></div>
-      <div class="empty">${esc(c.note)}</div>
-      <div class="chips">${c.matched.map((w) => `<span class="y">${esc(w)}</span>`).join("")}${c.missing.map((w) => `<span class="n">${esc(w)}</span>`).join("")}</div>`;
+    $("#conf").innerHTML = `<p class="empty">${esc(c.note)}: ${c.matched.length} of ${c.matched.length + c.missing.length}.</p>
+      <div class="chips">${c.matched.map((w) => `<span class="y">✓ ${esc(w)}</span>`).join("")}${c.missing.map((w) => `<span class="n">${esc(w)}</span>`).join("")}</div>`;
   }
 }
 
+function confClass(v) { return v >= 0.6 ? "c-hi" : v >= 0.4 ? "c-mid" : "c-lo"; }
+
 async function loadAudit() {
   try {
-    const rows = await (await fetch("/api/audit")).json();
-    $("#audit").innerHTML = rows.map((r) => `<tr><td>${r.id}</td><td>${esc((r.ts || "").slice(11, 19))}</td>
-      <td>${esc(r.query)}</td><td>${esc(r.route)}</td><td>${esc(r.source || "—")}</td>
-      <td>${r.confidence == null ? "" : Number(r.confidence).toFixed(2)}</td></tr>`).join("");
+    const { rows, summary } = await (await fetch("/api/audit")).json();
+    $("#summary").innerHTML = `<div><b>${summary.total}</b>queries</div><div><b>${summary.answered}</b>answered</div><div><b>${summary.refused}</b>refused</div>`;
+    $("#audit").innerHTML = rows.map((r) => `<tr><td class="num">${r.id}</td><td class="num">${esc((r.ts || "").slice(11, 19))}</td>
+      <td>${esc(r.query)}</td>
+      <td><span class="badge ${r.route === "FACTUAL" ? "fact" : "ok"}">${esc(r.route)}</span></td>
+      <td>${esc(r.source || "—")}</td>
+      <td class="num ${r.confidence == null ? "" : confClass(r.confidence)}">${r.confidence == null ? "" : Number(r.confidence).toFixed(2)}</td>
+      <td><a href="/?q=${encodeURIComponent(r.query)}" title="Run this query again">↗</a></td></tr>`).join("");
   } catch { /* audit view is non-critical */ }
 }
+
+async function loadStatus() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    const llm = s.llm ? LLM_NAME[s.llm] : "No LLM · quoting sources";
+    $("#status").innerHTML = `<i></i>${s.documents} documents · ${s.rules} rules · ${esc(llm)}`;
+  } catch { $("#status").textContent = "Offline"; }
+}
+
+loadStatus();
 loadAudit();
 const deepLink = new URLSearchParams(location.search).get("q");
 if (deepLink) { $("#q").value = deepLink; run(deepLink); }

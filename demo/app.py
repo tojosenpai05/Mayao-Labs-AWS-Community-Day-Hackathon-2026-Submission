@@ -283,14 +283,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         if path in ("/", "/index.html"):
             self._send(200, (ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
+        elif path == "/api/status":
+            status = {"documents": len(DOCS), "rules": len(RULES), "llm": llm_provider()}
+            self._send(200, json.dumps(status), "application/json")
         elif path == "/api/audit":
             with sqlite3.connect(DB_PATH) as db:
                 db.execute("CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, user TEXT, ts TEXT, "
                            "query TEXT, route TEXT, answer TEXT, source TEXT, confidence REAL)")
                 rows = db.execute("SELECT id, ts, query, route, source, confidence FROM audit "
                                   "ORDER BY id DESC LIMIT 10").fetchall()
+                total, refused = db.execute(
+                    "SELECT COUNT(*), COALESCE(SUM(answer = ?), 0) FROM audit", (REFUSAL,)).fetchone()
             keys = ("id", "ts", "query", "route", "source", "confidence")
-            self._send(200, json.dumps([dict(zip(keys, r)) for r in rows]), "application/json")
+            summary = {"total": total, "answered": total - refused, "refused": refused}
+            self._send(200, json.dumps({"rows": [dict(zip(keys, r)) for r in rows], "summary": summary}),
+                       "application/json")
         else:
             self._send(404, "not found", "text/plain")
 
