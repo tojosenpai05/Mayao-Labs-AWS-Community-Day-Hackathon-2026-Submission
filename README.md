@@ -8,11 +8,9 @@ WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a
 
 ## Team
 
-| Name | Role |
-|---|---|
-| Anantojo Mendan | _role_ |
-| _Full name_ (kaz) | _role_ |
-| _Full name_ | _role_ |
+- Shoaib Ur Rahman Syed
+- Kazuki Soma
+- Anantojo Mendan
 
 ## Screenshots
 
