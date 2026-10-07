@@ -234,7 +234,7 @@ async function animate(t) {
     setNode("gate", c.pass ? "done" : "block", `${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} ${c.threshold.toFixed(2)}`);
     await sleep(step);
     if (t.refused) setNode("llm", "skip", "blocked by gate");
-    else if (t.llm.used) setNode("llm", "done", `${t.llm.ms} ms`);
+    else if (t.llm.used) setNode("llm", "done", `${t.llm.provider === "bedrock" ? "Bedrock" : "Groq"} · ${t.llm.ms} ms`);
     else setNode("llm", "warn", "offline: extractive");
   }
   await sleep(step);

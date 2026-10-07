@@ -10,6 +10,7 @@ import math
 import os
 import re
 import sqlite3
+import subprocess
 import sys
 import time
 import urllib.request
@@ -68,10 +69,42 @@ def load_rules():
     ]
 
 
+def llm_provider():
+    if os.environ.get("LLM_PROVIDER", "").lower() == "bedrock":
+        return "bedrock"
+    return "groq" if os.environ.get("GROQ_API_KEY") else None
+
+
 def call_llm(prompt):
-    key = os.environ.get("GROQ_API_KEY")
-    if not key:
+    provider = llm_provider()
+    if provider == "bedrock":
+        return _bedrock(prompt)
+    if provider == "groq":
+        return _groq(prompt)
+    return None
+
+
+def _bedrock(prompt):
+    # The AWS CLI signs the request with the configured credentials, so no boto3 / SigV4 code is needed.
+    request = {
+        "modelId": os.environ.get("BEDROCK_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0"),
+        "messages": [{"role": "user", "content": [{"text": prompt}]}],
+        "inferenceConfig": {"maxTokens": 400, "temperature": 0},
+    }
+    try:
+        out = subprocess.run(["aws", "bedrock-runtime", "converse", "--cli-input-json", json.dumps(request),
+                              "--output", "json"], capture_output=True, text=True, timeout=25)
+        if out.returncode:
+            print(f"Bedrock call failed: {out.stderr.strip()}", file=sys.stderr)
+            return None
+        return json.loads(out.stdout)["output"]["message"]["content"][0]["text"].strip()
+    except Exception as exc:
+        print(f"Bedrock call failed: {exc}", file=sys.stderr)
         return None
+
+
+def _groq(prompt):
+    key = os.environ["GROQ_API_KEY"]
     body = json.dumps({
         "model": os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile"),
         "temperature": 0,
@@ -226,7 +259,8 @@ def answer(query, docs, rules):
               f"If the source does not answer it, reply exactly: {REFUSAL}\n\n"
               f"SOURCE ({doc['id']}, {doc['title']}):\n{doc['body']}\n\nQUESTION: {query}")
     generated = call_llm(prompt)
-    trace["llm"] = {"used": generated is not None, "ms": round((time.time() - started) * 1000),
+    trace["llm"] = {"used": generated is not None, "provider": llm_provider(),
+                    "ms": round((time.time() - started) * 1000),
                     "fallback": None if generated else "extractive (best-matching passage)"}
     text = generated or extract(query, doc)
     trace.update(answer=text, source=source_info(doc, by_id))
@@ -306,7 +340,7 @@ if __name__ == "__main__":
         sys.exit()
     DOCS, RULES = load_corpus(), load_rules()
     port = int(os.environ.get("PORT", 8000))
-    llm = "Groq" if os.environ.get("GROQ_API_KEY") else "none (extractive fallback)"
+    llm = {"bedrock": "Amazon Bedrock", "groq": "Groq"}.get(llm_provider(), "none (extractive fallback)")
     print(f"WAWASAN demo: {len(DOCS)} documents, {len(RULES)} rules, LLM: {llm}")
     print(f"http://localhost:{port}")
     http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
