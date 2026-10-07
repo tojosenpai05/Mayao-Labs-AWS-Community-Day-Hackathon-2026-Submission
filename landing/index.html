@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WAWASAN — Government Knowledge Intelligence</title>
-<meta name="description" content="Ask any question about Sarawak government policy. Cited answers, rule-based facts, no guessing.">
+<meta name="description" content="Ask it in plain English. Get an answer quoted word-for-word from a real document, with the source file open beside it.">
 <style>
   /* Design rules (keep to these three colours — nothing else):
      --ink  : black, backgrounds & text
@@ -103,8 +103,8 @@
   <div class="wrap">
     <svg class="hero-shape" viewBox="0 0 200 200"><circle cx="100" cy="60" r="55" fill="var(--ink)"/><rect x="60" y="120" width="120" height="70" fill="var(--lime)" stroke="var(--ink)" stroke-width="3"/></svg>
     <span class="pill">Mayao Labs · AWS SCD Kuching 2026</span>
-    <h1 style="margin-top:20px">Ask any question about <span class="accent">Sarawak government policy.</span></h1>
-    <p>WAWASAN is an internal knowledge assistant for civil servants. Every answer is cited, version-aware, and backed by a rule table — never a guess. If it's not in the corpus, it says so.</p>
+    <h1 style="margin-top:20px">Ask it. Then <span class="accent">check it yourself.</span></h1>
+    <p>WAWASAN is an internal knowledge assistant for civil servants. Every answer comes from a real document, and one click opens that source file with the passage highlighted. Nothing is invented — if no document covers the question, it says so.</p>
     <div class="hero-cta">
       <a class="btn btn-lime" href="#onboard">How to use it</a>
       <a class="btn btn-outline" href="#ask">What it does</a>
@@ -119,18 +119,20 @@
     </div>
     <div class="grid4">
       <div class="card on-paper">
+        <span class="pill" style="font-size:10px;padding:3px 9px;margin-bottom:10px;background:transparent;border:1.5px solid currentColor">In deployment</span>
         <h3>Policy lookup</h3>
-        <p>Structured facts — leave entitlements, procurement limits — answered from a rule table pointing at the exact circular. No LLM, no guessing.</p>
+        <p>Structured facts answered from a rule table pointing at the exact circular — no LLM, no guessing. Filled from an agency's verified circulars once a pilot starts; empty in the demo.</p>
         <svg class="shape" viewBox="0 0 120 120"><rect x="30" y="30" width="80" height="80" fill="var(--lime)"/><circle cx="30" cy="30" r="22" fill="var(--ink)"/></svg>
       </div>
       <div class="card on-ink">
         <h3>Document search</h3>
-        <p>BM25 retrieval over the full corpus of circulars, SOPs and transcripts. Every answer comes back with its source cited.</p>
+        <p>BM25 retrieval over real indexed documents. Every answer is quoted word-for-word from the matching passage, with its source file cited.</p>
         <svg class="shape" viewBox="0 0 120 120"><polygon points="60,10 120,110 0,110" fill="var(--lime)"/></svg>
       </div>
       <div class="card on-ink">
+        <span class="pill" style="font-size:10px;padding:3px 9px;margin-bottom:10px;background:transparent;border:1.5px solid currentColor;color:inherit">In deployment</span>
         <h3>Version-aware</h3>
-        <p>Superseded circulars are still retrieved but never used as the answer — shown struck through, pointing to what replaced them.</p>
+        <p>Superseded documents are retrieved but never used as the answer, and point to what replaced them. Built, but no versioned documents in the demo yet.</p>
         <svg class="shape" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--lime)" stroke-width="10"/><circle cx="60" cy="60" r="22" fill="var(--lime)"/></svg>
       </div>
       <div class="card on-paper">
@@ -150,8 +152,8 @@
                 └─ INTERPRETIVE ─→ BM25 retrieval → Confidence gate → LLM ┘</div>
     <div class="flow-steps">
       <div><b>Router</b>Fact markers (grade, limit, rate…) → rule engine. "Why" questions always → retrieval.</div>
-      <div><b>Rule engine</b>Exact values, each pointing at its source circular. No model involved.</div>
-      <div><b>Confidence gate</b>Below 60% of key terms matched in the top source → refuses, before any LLM call.</div>
+      <div><b>Rule engine</b>Exact values, each pointing at its source circular. No model involved. Empty in the demo until verified circulars exist.</div>
+      <div><b>Confidence gate</b>Below 50% of key terms matched in the top source → refuses, before any LLM call.</div>
       <div><b>Audit log</b>Every query, route, answer and confidence score recorded.</div>
     </div>
   </div>
@@ -160,48 +162,55 @@
 <section class="scenarios" id="onboard">
   <div class="wrap">
     <div class="section-head">
-      <div><span class="pill">Case study</span><h2>Five ways to ask it</h2></div>
+      <div><span class="pill">Case study</span><h2>Four ways to use it</h2></div>
     </div>
   </div>
   <div class="wrap" style="padding:0">
     <div class="scenario">
-      <div class="shot"><img src="screenshots/3-out-of-corpus-refusal.png" alt="Out-of-corpus refusal" loading="lazy"></div>
+      <div class="shot"><img src="screenshots/1-cited-answer-with-source.png" alt="Cited answer with source file" loading="lazy"></div>
       <div class="copy">
-        <span class="num">01 — Refusal</span>
+        <span class="num">01 — Cited answer</span>
+        <p class="q">"What are the failure points of RAG systems?"</p>
+        <h3>Grounded in one passage</h3>
+        <p>The answer is quoted word-for-word from the matching passage. With an AI connected, its summary is shown beside the only passage it was given. One click opens the source file with that text highlighted.</p>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="shot"><img src="screenshots/4-source-file-popup.png" alt="Source file pop-up" loading="lazy"></div>
+      <div class="copy">
+        <span class="num">02 — Open source file</span>
+        <h3>Check it yourself</h3>
+        <p>Click "Open source file" and the real file pops up, passage highlighted, with buttons to open or download the original.</p>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="shot"><img src="screenshots/2-refused-question.png" alt="Refused question" loading="lazy"></div>
+      <div class="copy">
+        <span class="num">03 — Refusal</span>
         <p class="q">"What is the work-from-home policy?"</p>
-        <h3>It says so when it doesn't know</h3>
-        <p>The confidence gate blocks the question before any LLM call is made. No hallucinated policy.</p>
+        <h3>It says so when no document covers it</h3>
+        <p>The confidence gate refuses the question before any LLM call is made. No document means no answer — never a guess.</p>
       </div>
     </div>
     <div class="scenario">
-      <div class="shot"><img src="screenshots/4-version-supersession.png" alt="Version supersession" loading="lazy"></div>
+      <div class="shot"><img src="screenshots/3-full-pipeline.png" alt="Full pipeline view" loading="lazy"></div>
       <div class="copy">
-        <span class="num">02 — Supersession</span>
-        <p class="q">"What is the direct procurement limit?"</p>
-        <h3>It knows what changed</h3>
-        <p>Answered from the current circular (RM 50,000). The 2022 version it replaced is shown, struck through — no model involved.</p>
-      </div>
-    </div>
-    <div class="scenario">
-      <div class="shot"><img src="screenshots/5-institutional-memory.png" alt="Institutional memory" loading="lazy"></div>
-      <div class="copy">
-        <span class="num">03 — Institutional memory</span>
-        <p class="q">"Why was the procurement threshold raised in 2024?"</p>
-        <h3>It remembers why, not just what</h3>
-        <p>Routed to a captured interview with a retired officer. No circular contains this reasoning — WAWASAN does.</p>
+        <span class="num">04 — Full pipeline</span>
+        <h3>Nothing hidden from the presenter</h3>
+        <p>"How was this answered?" expands the route taken, retrieval scores, and confidence against the refusal threshold.</p>
       </div>
     </div>
   </div>
   <div class="wrap">
     <div class="grid4" style="margin-top:0;border-top:none">
       <div class="card on-paper" style="min-height:140px;padding:24px 28px 60px">
-        <h3 style="font-size:16px">04 — Deterministic fact</h3>
-        <p>"Annual leave for Grade 41?" → router → rule engine → instant answer, no LLM.</p>
+        <h3 style="font-size:16px">More things to try</h3>
+        <p>"Why is DDMS adoption in Malaysia still low?" · "What records management problems did Sarawak agencies have?"</p>
         <svg class="shape" style="width:70px;height:70px" viewBox="0 0 120 120"><circle cx="60" cy="60" r="45" fill="var(--lime)"/></svg>
       </div>
       <div class="card on-ink" style="min-height:140px;padding:24px 28px 60px">
-        <h3 style="font-size:16px">05 — Cited answer</h3>
-        <p>"How do I apply for annual leave?" → BM25 → confidence gate → cited passage, LLM-summarised or quoted directly.</p>
+        <h3 style="font-size:16px">Nothing is invented</h3>
+        <p>It searches only real files in this repo: 18 research notes citing published studies, plus any PDF dropped into <code>demo/library/</code>.</p>
         <svg class="shape" style="width:70px;height:70px" viewBox="0 0 120 120"><rect x="30" y="30" width="60" height="60" fill="var(--lime)" transform="rotate(20 60 60)"/></svg>
       </div>
     </div>
@@ -211,7 +220,7 @@
 <section class="cta-block">
   <div class="wrap">
     <h2>Run the pilot in ten minutes</h2>
-    <p>Python 3.10+, standard library only. Nothing to install to see all five scenarios work.</p>
+    <p>Python 3.10+, standard library only. Nothing to install to see all four scenarios work.</p>
     <pre class="code">git clone https://github.com/tojosenpai05/Mayao-Labs-AWS-Community-Day-Hackathon-2026-Submission.git
 cd Mayao-Labs-AWS-Community-Day-Hackathon-2026-Submission
 python3 demo/app.py            # http://localhost:8000
@@ -219,8 +228,8 @@ python3 demo/app.py --selftest</pre>
     <table>
       <tr><th>Layer</th><th>Demo</th><th>Production target</th></tr>
       <tr><td>Retrieval</td><td>BM25, in-process</td><td>Lambda + hybrid BM25/dense once corpus grows</td></tr>
-      <tr><td>Rules & audit</td><td>Python dict / SQLite</td><td>DynamoDB</td></tr>
-      <tr><td>Answers</td><td>Bedrock, Groq, or extractive fallback</td><td>Amazon Bedrock, Claude Haiku 4.5</td></tr>
+      <tr><td>Rules & audit</td><td>Empty rule table (no verified circulars yet) / SQLite</td><td>DynamoDB</td></tr>
+      <tr><td>Answers</td><td>Bedrock, DeepSeek, Groq, or the quoted passage</td><td>Amazon Bedrock, Claude Haiku 4.5</td></tr>
       <tr><td>Frontend</td><td>Served by the same process</td><td>S3 + CloudFront</td></tr>
     </table>
   </div>
