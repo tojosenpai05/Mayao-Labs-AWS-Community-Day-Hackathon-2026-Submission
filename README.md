@@ -64,11 +64,17 @@ python3 demo/app.py            # http://localhost:8000
 python3 demo/app.py --selftest # checks routing, ranking, refusal, supersession
 ```
 
-Optional LLM rewriting of answers (free tier, no credit card needed):
+Optional LLM answer generation, either with Amazon Bedrock or with Groq's free tier:
 
 ```bash
+# Amazon Bedrock: needs AWS CLI credentials and model access enabled for Claude Haiku 4.5
+LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
+
+# Groq free tier (no credit card)
 GROQ_API_KEY=your_key python3 demo/app.py
 ```
+
+Bedrock defaults to the `global.anthropic.claude-haiku-4-5-20251001-v1:0` inference profile; override it with `BEDROCK_MODEL_ID`. A *global* profile may process requests outside the chosen region. A production deployment that needs data residency would use an in-region model or geography-specific profile instead.
 
 Open `http://localhost:8000/?q=your+question` to run a question directly from the URL.
 
@@ -81,7 +87,7 @@ The demo runs locally. Each component maps one-to-one onto AWS, and the four fun
 | `corpus/*.md` | Amazon S3 |
 | Router + BM25 (Python) | AWS Lambda behind a Function URL |
 | Rule table (dict) | Amazon DynamoDB |
-| Groq / extractive fallback | Amazon Bedrock (Claude Haiku 4.5) |
+| Groq / extractive fallback | Amazon Bedrock, Claude Haiku 4.5 (already supported via `LLM_PROVIDER=bedrock`) |
 | SQLite audit log | Amazon DynamoDB + CloudWatch |
 
 **Estimated cost to run the demo on AWS: about US$1.** That covers ~300 queries at ~$0.003 each on Bedrock Haiku 4.5. Lambda, DynamoDB and S3 stay within the free tier at this volume. We deliberately do **not** use OpenSearch Serverless: at this corpus size BM25 inside Lambda is enough, and OpenSearch bills continuously (~$0.48/hr) whether it is queried or not.
@@ -95,9 +101,9 @@ The demo runs locally. Each component maps one-to-one onto AWS, and the four fun
 - Bedrock Guardrails for content filtering
 - An admin interface for maintaining the rule table, which flags rules whose source circular has changed
 - **Bahasa Malaysia + English** queries and documents. The demo is English-only.
-
-**Phase 3: institutional memory capture and ecosystem**
 - **Knowledge capture pipeline (SOL-03).** Retiring officers record exit interviews, transcribed by Amazon Transcribe. AI-guided follow-up questions fill the gaps, and the result is structured into indexed documents. The demo already shows the *output* of this pipeline: scenario 5 answers from a captured interview.
+
+**Phase 3: ecosystem**
 - Knowledge graph (Amazon Neptune) for cross-agency relationships, e.g. "Circular X changed, and these four SOPs reference it". It sits outside the live query path to keep latency down.
 - Federated search across agencies without moving their data
 - Integration with Dayang, Sarawak's citizen-facing assistant

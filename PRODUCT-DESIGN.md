@@ -20,9 +20,9 @@ This is the exact gap WAWASAN fills. It is the **internal Dayang** — built for
 
 ## What WAWASAN Is
 
-WAWASAN is a **closed-corpus, multilingual, hybrid AI knowledge assistant** for Sarawak state government agencies. It combines four research-backed solution approaches into a single product that has not yet been deployed anywhere in Malaysia or Sarawak.
+WAWASAN is a **closed-corpus, hybrid AI knowledge assistant** for Sarawak state government agencies. It combines four research-backed solution approaches into a single product that has not yet been deployed anywhere in Malaysia or Sarawak.
 
-**In plain language:** Civil servants ask questions in natural language (Bahasa Malaysia or English). WAWASAN searches across all connected agency document stores, finds the most relevant and current policy/SOP/circular, and returns a cited, trustworthy answer — with the source document, version date, and owning department clearly shown.
+**In plain language:** Civil servants ask questions in natural language (English in the current MVP; Bahasa Malaysia is on the roadmap). WAWASAN searches across all connected agency document stores, finds the most relevant and current policy/SOP/circular, and returns a cited, trustworthy answer — with the source document, version date, and owning department clearly shown.
 
 If it doesn't know the answer, it says so. It never guesses on policy facts.
 
@@ -61,9 +61,9 @@ CIVIL SERVANT ASKS A QUESTION
        ▼               ▼
 ┌────────────┐  ┌──────────────────────────────┐
 │ Rule Engine│  │  Hybrid RAG Pipeline          │  ← SOL-01 contribution
-│ (DynamoDB  │  │  BM25 keyword + FAISS vector  │
-│  tables)   │  │  + Cross-encoder reranker     │
-│            │  │  + Bedrock Claude Sonnet      │
+│ (DynamoDB  │  │  BM25 keyword retrieval       │
+│  tables)   │  │  + confidence gate            │
+│            │  │  + Bedrock Claude Haiku 4.5   │
 └─────┬──────┘  └──────────────┬───────────────┘
       │                        │
       └───────────┬────────────┘
@@ -96,10 +96,8 @@ The **Institutional Memory layer (SOL-03)** feeds into the document corpus — i
 ### 1. No existing equivalent internally
 Dayang (citizen-facing) exists. The DDMS (document filing) exists. But **no product combines intelligent retrieval + policy accuracy + institutional memory preservation + governance** in a single internal tool for Sarawak civil servants. This combination is genuinely new.
 
-### 2. Multilingual by design
-Sarawak's documents span Bahasa Malaysia, English, and community-level records in Iban and other languages. WAWASAN uses Amazon Bedrock's multilingual embedding models (Titan v2 supports multilingual) and accepts queries in either BM or English — returning answers in the same language the question was asked.
-
-No existing Malaysian government knowledge system has this as a built-in feature rather than an afterthought.
+### 2. Designed to go multilingual (roadmap)
+Sarawak's documents span Bahasa Malaysia, English, and community-level records in Iban and other languages. **The MVP is English-only.** The production target uses multilingual embedding models (e.g. Amazon Titan Text Embeddings v2) to accept queries in BM or English and answer in the language of the question. Nothing in the pipeline's design ties it to one language: the router, rule engine and confidence gate are language-agnostic once their keyword lists are localised.
 
 ### 3. Version-aware, not just version-storing
 The DDMS stores versions. It doesn't *understand* them. WAWASAN tracks temporal relationships between documents — it knows that Circular 7/2024 supersedes Circular 3/2022, and when you ask about the procurement process, it returns the *current* answer, not the most recently uploaded document.
@@ -129,8 +127,8 @@ Every query is logged. Every answer cites its source. Role-based access means a 
 ### ✅ Institutional memory as a competitive moat
 By capturing the tacit knowledge of retiring civil servants (transcribed interviews, contextual notes, decision histories), WAWASAN builds a knowledge base that gets *more valuable over time*. Competing tools that only index formal documents will always have shallower institutional memory than WAWASAN.
 
-### ✅ Language-aware for Sarawak's multilingual reality
-BM + English is table stakes; the multilingual embedding layer means community-level documents in Iban or other Sarawakian languages can be indexed and queried — a capability no national-level Malaysian system currently offers.
+### ✅ A path to Sarawak's multilingual reality (roadmap)
+The MVP is English-only. BM + English is the Phase 2 target, and a multilingual embedding layer would later allow community-level documents in Iban or other Sarawakian languages to be indexed and queried.
 
 ### ✅ Aligned with SDEB 2030 and SAIC
 The political and budgetary tailwinds are real. SDEB 2030 calls for AI-enabled government services. SAIC coordinates AI adoption. WAWASAN is the product that makes the internal side of that transformation real.
@@ -158,31 +156,32 @@ Sarawak's rural-urban digital divide means agencies outside Kuching/Miri may hav
 Malaysia's history of low DDMS adoption is not a technology failure — it's a culture failure. Even a perfect technical product will fail if civil servants don't trust it or are not trained to use it. **Mitigation:** Co-design rollout with one pilot department; measure time-to-answer improvement; let staff experience the win before scaling.
 
 ### ❌ Data sovereignty concerns
-Sarawak government documents are sensitive. Routing them through cloud AI services (even AWS) raises data sovereignty questions that some agency heads will have. **Mitigation:** Deploy using Amazon Bedrock in the AWS Asia Pacific (Singapore) region — ap-southeast-1 is the closest with full compliance posture; all data stays within the region. Consider on-premises Bedrock options for highest-sensitivity agencies.
+Sarawak government documents are sensitive. Routing them through cloud AI services (even AWS) raises data sovereignty questions that some agency heads will have. **Mitigation:** Host storage and compute (S3, Lambda, DynamoDB) in the AWS Asia Pacific (Singapore) region, ap-southeast-1, the closest region to Kuching. For the LLM call, note that Bedrock's *global* cross-region inference profiles may process requests outside the region. Data residency therefore needs an in-region model or a geography-specific inference profile, which should be confirmed per model before any production deployment. Highly sensitive agencies may need a self-hosted model instead (see `research/solutions/OPEN-SOURCE-ALTERNATIVES.md`).
 
 ---
 
 ## Product Roadmap
 
-### Phase 1 — MVP (hackathon / 3-month pilot)
-- S3 corpus of 1 pilot agency's documents
-- Bedrock Knowledge Bases + Claude Sonnet (RAG core)
-- Basic query classifier Lambda (structured vs interpretive)
-- Citation + confidence UI
-- DynamoDB audit log
-- Amplify chat frontend (BM + EN)
+### Phase 1 — Hackathon MVP (built: see `demo/`)
+- Dependency-free pipeline: query router, deterministic rule engine, BM25 retrieval, confidence gate with refusal, version supersession, audit log
+- Captured knowledge-interview transcripts indexed alongside circulars (the *output* of the SOL-03 capture workflow)
+- Web UI that visualises each pipeline stage's decision
+- Optional answer generation via Amazon Bedrock (Claude Haiku 4.5); every scenario also works without an LLM
+- Sample corpus of fictional circulars; English only
 
-### Phase 2 — Production (6–12 months)
+### Phase 2 — Pilot and production on AWS (3–12 months)
+- Deploy the MVP: S3 corpus · Lambda (Function URL) for router + retrieval · DynamoDB for rule tables + audit log · Bedrock for answers
+- Hybrid retrieval (BM25 + dense embeddings) once the corpus outgrows keyword search
+- **Bahasa Malaysia + English** queries and documents
 - Multi-agency S3 connectors
-- Rule engine with structured policy tables + admin update interface
+- Rule engine admin interface that flags rules whose source circular has changed
 - Institutional memory capture workflow (Transcribe + Textract pipeline)
 - Role-based access (Cognito)
 - Bedrock Guardrails (content filtering)
-- Mobile-responsive frontend
 - Offline cache for low-connectivity district offices
 
 ### Phase 3 — Ecosystem (12–24 months)
-- Knowledge Graph layer (Amazon Neptune) replacing flat vector index
+- Knowledge Graph layer (Amazon Neptune) alongside the retrieval index, for relationship queries and change propagation, and kept off the per-query hot path
 - Cross-agency semantic search (federated, no data movement)
 - Policy change propagation alerts ("Circular X has been updated — these 4 SOPs reference it")
 - Integration with Dayang (citizen-facing AI) so Dayang can route internal knowledge questions to WAWASAN
@@ -192,7 +191,7 @@ Sarawak government documents are sensitive. Routing them through cloud AI servic
 
 ## The Pitch in One Sentence
 
-> *"WAWASAN is the internal Dayang — an AI knowledge assistant for Sarawak civil servants that turns decades of government documents into instant, cited, trustworthy answers in Bahasa Malaysia or English, so no knowledge is ever lost when a civil servant retires and no officer ever wastes an afternoon searching for a circular that already exists."*
+> *"WAWASAN is the internal Dayang — an AI knowledge assistant for Sarawak civil servants that turns decades of government documents into instant, cited, trustworthy answers, so no knowledge is ever lost when a civil servant retires and no officer ever wastes an afternoon searching for a circular that already exists."*
 
 ---
 
@@ -206,7 +205,7 @@ Sarawak government documents are sensitive. Routing them through cloud AI servic
 | **No one owns the problem** | SAIC coordinates AI policy but doesn't build products. Agencies use DDMS but don't have AI budgets. The gap falls between mandates. |
 | **Language barrier was unsolved** | Multilingual BM/EN government document retrieval with reliable quality has only become feasible with modern embedding models (2024–2025) |
 
-WAWASAN is buildable now because the components (Bedrock Knowledge Bases, multilingual Titan embeddings, OpenSearch hybrid search, Guardrails) all reached production maturity in 2024–2025. Six months ago, this product would have required significantly more custom engineering.
+WAWASAN is buildable now because the production components it relies on (Bedrock foundation models, multilingual embeddings, managed hybrid search, Guardrails) all reached production maturity in 2024–2025. The MVP in `demo/` makes the complementary point: the core pipeline logic of routing, rule lookup, retrieval, refusal and supersession needs no heavy infrastructure at all.
 
 ---
 
