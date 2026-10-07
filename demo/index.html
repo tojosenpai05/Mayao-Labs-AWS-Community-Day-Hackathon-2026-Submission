@@ -72,8 +72,16 @@ kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); 
 .node .cap { font-size: 12px; color: var(--muted); margin-top: 3px; min-height: 18px; overflow-wrap: anywhere; }
 .node .lane { font-size: 10px; font-weight: 700; letter-spacing: 1px; }
 #n-rule .lane { color: var(--fact); } #n-retrieve .lane { color: var(--accent); }
-#n-rule { box-shadow: inset 4px 0 0 var(--fact); }
-#n-retrieve, #n-gate, #n-llm { box-shadow: inset 4px 0 0 var(--accent); }
+.fold { padding: 0; margin-top: 12px; }
+.fold summary { cursor: pointer; padding: 14px 18px; font-weight: 650; list-style: none; display: flex; align-items: center; gap: 8px; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.fold[open] summary::before { transform: rotate(90deg); }
+.fold summary:hover { color: var(--accent); }
+.fold .count { color: var(--muted); font-weight: 500; }
+.fold-body { padding: 0 18px 18px; }
+.topics { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.topics span { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; color: var(--ink); }
 .node:not(.last)::after { content: "›"; position: absolute; right: -19px; top: 50%; transform: translateY(-50%);
   color: var(--muted); font-size: 22px; }
 .span2 { grid-row: 1 / span 2; }
@@ -93,7 +101,6 @@ kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); 
 }
 
 /* Results */
-.grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .badge { font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 99px;
   background: var(--idle); color: var(--muted); text-transform: uppercase; }
@@ -148,11 +155,6 @@ kbd { font: 600 11px/1 ui-monospace, monospace; background: var(--accent-soft); 
 .chips .y { background: var(--accent-soft); color: var(--accent); }
 .chips .n { background: var(--bad-soft); color: var(--bad); text-decoration: line-through; }
 .empty { color: var(--muted); font-size: 13px; margin: 0; }
-.start p { margin: 0 0 10px; color: var(--muted); }
-.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cats div { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
-.cats b { display: block; font-size: 14px; }
-.cats span { color: var(--muted); }
 
 /* Audit */
 .summary { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
@@ -171,7 +173,6 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
   .pipe { grid-template-columns: 1fr; }
   .pipe .node { grid-column: 1 !important; grid-row: auto !important; }
   .node:not(.last)::after { content: "⌄"; right: auto; left: 50%; top: auto; bottom: -21px; transform: translateX(-50%); }
-  .grid2, .cats { grid-template-columns: 1fr; }
   .ba { grid-template-columns: 1fr; } .ba .arrow { transform: rotate(90deg); justify-self: start; }
   .ask { padding: 0 16px; }
 }
@@ -187,7 +188,7 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
         </svg>
         <h1>WAWASAN</h1>
       </div>
-      <p class="tagline">Internal knowledge assistant for Sarawak civil servants: cited, version-aware answers from policies, circulars and captured institutional memory.</p>
+      <p class="tagline">Ask any question about Sarawak government policy. Get a cited answer from official circulars and records.</p>
     </div>
     <span class="status" id="status"><i></i>Connecting…</span>
   </header>
@@ -202,37 +203,44 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
       <input id="q" type="text" autocomplete="off" placeholder="e.g. How do I apply for annual leave?">
       <button class="ask" id="askbtn" type="submit"><span class="spin" aria-hidden="true"></span><span id="asktext">Ask</span></button>
     </form>
-    <div class="presets" id="presets" aria-label="Demo scenarios (keys 1 to 5)"></div>
+    <div class="topics" id="topics"></div>
+    <div class="presets" id="presets" aria-label="Example questions (keys 1 to 5)"></div>
   </section>
 
-  <section class="panel">
-    <h2>Pipeline</h2>
-    <div class="pipe">
-      <div class="node span2" id="n-query" title="The officer's question, in plain English."><span class="name">1 · Query</span><span class="cap"></span></div>
-      <div class="node span2" id="n-classify" title="Decides whether this is a structured fact (rule engine) or needs document retrieval. 'Why' questions always go to retrieval."><span class="name">2 · Router</span><span class="cap"></span></div>
-      <div class="node" id="n-rule" title="Exact values from a curated rule table. Deterministic: no LLM is involved."><span class="lane">FACTUAL LANE</span><span class="name">3 · Rule engine</span><span class="cap"></span></div>
-      <div class="node" id="n-retrieve" title="BM25 keyword ranking over every circular and knowledge interview. Superseded circulars are retrieved but never used as the answer."><span class="lane">INTERPRETIVE LANE</span><span class="name">3 · BM25 retrieval</span><span class="cap"></span></div>
-      <div class="node" id="n-gate" title="Share of the question's key terms found in the top source. Below the threshold, the system refuses before calling any LLM."><span class="name">4 · Confidence gate</span><span class="cap"></span></div>
-      <div class="node" id="n-llm" title="Writes the answer from the cited source only. Without an LLM, the best-matching passage is quoted instead."><span class="name">5 · LLM</span><span class="cap"></span></div>
-      <div class="node span2" id="n-answer" title="Answer with its source document, version date and owning department."><span class="name">6 · Answer + citation</span><span class="cap"></span></div>
-      <div class="node span2 last" id="n-audit" title="Every query, answer, source and confidence score is recorded."><span class="name">7 · Audit log</span><span class="cap"></span></div>
+  <section class="panel"><h2>Answer</h2><div id="answer"></div></section>
+
+  <details class="panel fold" id="d-sources">
+    <summary>Sources checked <span class="count" id="srcCount"></span></summary>
+    <div class="fold-body" id="hits"><p class="empty">The documents searched for your question will appear here.</p></div>
+  </details>
+
+  <details class="panel fold" id="d-how">
+    <summary>How was this answered?</summary>
+    <div class="fold-body">
+      <div class="pipe">
+        <div class="node span2" id="n-query" title="Query: the officer's question."><span class="name">1 · Your question</span><span class="cap"></span></div>
+        <div class="node span2" id="n-classify" title="Router: fixed facts (grade, limit, rate…) go to the policy lookup; everything else, and every 'why' question, goes to document search."><span class="name">2 · Type of question</span><span class="cap"></span></div>
+        <div class="node" id="n-rule" title="Rule engine: exact values from a curated table, each tied to its circular. No AI involved."><span class="lane">FIXED FACTS</span><span class="name">3 · Policy lookup</span><span class="cap"></span></div>
+        <div class="node" id="n-retrieve" title="BM25 retrieval: ranks every document by keyword relevance. Outdated circulars are found but never used as the answer."><span class="lane">EVERYTHING ELSE</span><span class="name">3 · Document search</span><span class="cap"></span></div>
+        <div class="node" id="n-gate" title="Confidence gate: how much of the question the best document covers (rarer words count more). Too low, and it refuses before any AI is used."><span class="name">4 · Accuracy check</span><span class="cap"></span></div>
+        <div class="node" id="n-llm" title="LLM: writes the answer from the cited document only. With no AI connected, the best-matching passage is quoted instead."><span class="name">5 · AI summary</span><span class="cap"></span></div>
+        <div class="node span2" id="n-answer" title="Answer with its source document, version date and owning department."><span class="name">6 · Answer</span><span class="cap"></span></div>
+        <div class="node span2 last" id="n-audit" title="Audit log: every question, answer, source and confidence is recorded."><span class="name">7 · Logged</span><span class="cap"></span></div>
+      </div>
+      <h2 style="margin-top:18px">Accuracy check detail</h2>
+      <div id="conf"><p class="empty">Which words of your question were found in the source will appear here.</p></div>
     </div>
-  </section>
+  </details>
 
-  <section class="grid2">
-    <div class="panel"><h2>Answer</h2><div id="answer"></div></div>
-    <div class="panel">
-      <h2>Retrieval</h2><div id="hits"><p class="empty">Ranked sources will appear here.</p></div>
-      <h2 style="margin-top:18px">Why this confidence</h2><div id="conf"><p class="empty">Matched and missing key terms will appear here.</p></div>
+  <details class="panel fold" id="d-log">
+    <summary>Activity log</summary>
+    <div class="fold-body">
+      <p class="empty" style="margin-bottom:12px">Every question is recorded for governance: who asked, what was answered, and from which document.</p>
+      <div class="summary" id="summary"></div>
+      <div class="scroll"><table><thead><tr><th>#</th><th>Time</th><th>Question</th><th>Method</th><th>Document used</th><th>Confidence</th><th></th></tr></thead>
+      <tbody id="audit"></tbody></table></div>
     </div>
-  </section>
-
-  <section class="panel">
-    <h2>Audit log</h2>
-    <div class="summary" id="summary"></div>
-    <div class="scroll"><table><thead><tr><th>#</th><th>Time</th><th>Query</th><th>Route</th><th>Source</th><th>Conf.</th><th></th></tr></thead>
-    <tbody id="audit"></tbody></table></div>
-  </section>
+  </details>
 
   <footer>
     Running locally with Python stdlib only. Production target on AWS:
@@ -243,19 +251,24 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 <script>
 const PRESET_SETS = {
   circulars: [
-    ["Deterministic fact", "What is the annual leave entitlement for Grade 41?"],
-    ["Cited answer", "How do I apply for annual leave?"],
-    ["Out-of-corpus refusal", "What is the work-from-home policy?"],
-    ["Version supersession", "What is the direct procurement limit?"],
-    ["Institutional memory", "Why was the procurement threshold raised in 2024?"],
+    ["Annual leave entitlement", "What is the annual leave entitlement for Grade 41?"],
+    ["How to apply for leave", "How do I apply for annual leave?"],
+    ["Question we can't answer", "What is the work-from-home policy?"],
+    ["Procurement limit (updated)", "What is the direct procurement limit?"],
+    ["Why a policy changed", "Why was the procurement threshold raised in 2024?"],
   ],
   library: [
     ["RAG failure points", "What are the failure points of RAG systems?"],
     ["Malaysia adoption gap", "Why is DDMS adoption in Malaysia still low?"],
     ["Sarawak records", "What records management problems did Sarawak agencies have?"],
-    ["Out-of-corpus refusal", "What is the work-from-home policy?"],
+    ["Question we can't answer", "What is the work-from-home policy?"],
   ],
 };
+const TOPICS = {
+  circulars: ["Leave & HR", "Procurement", "Claims & allowances", "Records & governance"],
+  library: ["Knowledge management", "AI search (RAG)", "Malaysia e-government", "Sarawak records"],
+};
+const METHOD = { FACTUAL: "Policy lookup", INTERPRETIVE: "Document search" };
 const PLACEHOLDER = { circulars: "e.g. How do I apply for annual leave?", library: "e.g. Why do RAG systems fail on government documents?" };
 const params = new URLSearchParams(location.search);
 let corpus = PRESET_SETS[params.get("corpus")] ? params.get("corpus") : "circulars";
@@ -267,21 +280,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
 const LLM_NAME = { bedrock: "Bedrock", groq: "Groq" };
 const START = {
-  circulars: `<div class="start"><p>Ask about any policy in the corpus, or press <kbd>1</kbd>–<kbd>5</kbd> for a demo scenario.</p>
-  <div class="cats">
-    <div><b>Leave &amp; HR</b><span>Annual, medical, study leave; acting posts</span></div>
-    <div><b>Procurement</b><span>Direct procurement limits and their history</span></div>
-    <div><b>Claims &amp; allowances</b><span>Travel, mileage, overtime</span></div>
-    <div><b>Records &amp; governance</b><span>Retention, minutes, discipline</span></div>
-  </div></div>`,
-  library: `<div class="start"><p>Searches the team's real research notes, split into passages so every answer cites the exact passage.
-  Press <kbd>1</kbd>–<kbd>4</kbd> for an example, or drop PDFs into <code>demo/library/</code> and restart to index them too.</p>
-  <div class="cats">
-    <div><b>Knowledge management</b><span>Fragmentation, silos, outdated guidelines</span></div>
-    <div><b>RAG systems</b><span>Failure points, hybrid retrieval, hallucination</span></div>
-    <div><b>Malaysia</b><span>DDMS, e-government adoption</span></div>
-    <div><b>Sarawak</b><span>Records management, SDEB 2030, Dayang</span></div>
-  </div></div>`,
+  circulars: `<p class="empty">Type a question above, or pick an example (keys <kbd>1</kbd>–<kbd>5</kbd>).
+    Every answer shows the circular it came from.</p>`,
+  library: `<p class="empty">Searches the team's real research notes, passage by passage, so every answer cites the exact passage.
+    Pick an example (keys <kbd>1</kbd>–<kbd>4</kbd>), or drop PDFs into <code>demo/library/</code> and restart to include them.</p>`,
 };
 
 function setNode(id, state, cap) {
@@ -304,9 +306,11 @@ function setCorpus(c) {
     $("#presets").appendChild(b);
   });
   $("#q").placeholder = PLACEHOLDER[c];
+  $("#topics").innerHTML = "Topics: " + TOPICS[c].map((t) => `<span>${esc(t)}</span>`).join("");
   $("#answer").innerHTML = START[c];
-  $("#hits").innerHTML = '<p class="empty">Ranked sources will appear here.</p>';
-  $("#conf").innerHTML = '<p class="empty">Matched and missing key terms will appear here.</p>';
+  $("#srcCount").textContent = "";
+  $("#hits").innerHTML = '<p class="empty">The documents searched for your question will appear here.</p>';
+  $("#conf").innerHTML = '<p class="empty">Which words of your question were found in the source will appear here.</p>';
   STAGES.forEach((s) => setNode(s, "", ""));
   renderStatus();
 }
@@ -352,44 +356,44 @@ async function run(q) {
 async function animate(t) {
   const step = 380;
   const factual = t.route === "FACTUAL";
-  setNode("classify", factual ? "fact" : "done", t.route);
+  setNode("classify", factual ? "fact" : "done", factual ? "fixed fact" : "needs documents");
   await sleep(step);
   if (factual && t.rule?.matched) {
     setNode("rule", "fact", t.rule.topic);
     ["retrieve", "gate", "llm"].forEach((s) => setNode(s, "skip", "not needed"));
   } else {
-    setNode("rule", factual ? "block" : "skip", factual ? "no matching rule → retrieval" : "not a structured fact");
+    setNode("rule", factual ? "block" : "skip", factual ? "no fixed answer → searching" : "not a fixed fact");
     await sleep(step);
-    setNode("retrieve", "done", `${t.retrieval.length} documents ranked`);
+    setNode("retrieve", "done", `${t.retrieval.length} documents found`);
     await sleep(step);
     const c = t.confidence;
     setNode("gate", c.pass ? "done" : "block", `${c.value.toFixed(2)} ${c.pass ? "≥" : "<"} ${c.threshold.toFixed(2)}`);
     await sleep(step);
-    if (t.refused) setNode("llm", "skip", "blocked by gate");
-    else if (t.llm.used) setNode("llm", "done", `${LLM_NAME[t.llm.provider] || "LLM"} · ${t.llm.ms} ms`);
-    else setNode("llm", "warn", "offline: quoting source");
+    if (t.refused) setNode("llm", "skip", "skipped: not confident");
+    else if (t.llm.used) setNode("llm", "done", `${LLM_NAME[t.llm.provider] || "AI"} · ${t.llm.ms} ms`);
+    else setNode("llm", "warn", "no AI: quoting source");
   }
   await sleep(step);
-  setNode("answer", t.refused ? "block" : (factual && t.rule?.matched ? "fact" : "done"), t.refused ? "refused" : t.source?.id);
+  setNode("answer", t.refused ? "block" : (factual && t.rule?.matched ? "fact" : "done"), t.refused ? "not answered" : t.source?.id);
   await sleep(step);
-  setNode("audit", "done", `entry #${t.audit_id}`);
+  setNode("audit", "done", `record #${t.audit_id}`);
 }
 
 function confRow(t, factualHit) {
-  if (factualHit) return `<div class="confrow">Confidence <b>1.00</b> · exact rule match</div>`;
+  if (factualHit) return `<div class="confrow">Confidence <b>1.00</b> · exact match in the policy table</div>`;
   const c = t.confidence;
   return `<div class="confrow">Confidence <b>${c.value.toFixed(2)}</b>
     <div class="meter"><i class="${c.pass ? "" : "low"}" style="width:${c.value * 100}%"></i><b style="left:${c.threshold * 100}%"></b></div>
-    threshold ${c.threshold.toFixed(2)} <span class="badge ${c.pass ? "ok" : "bad"}">${c.pass ? "✓ pass" : "blocked"}</span></div>`;
+    minimum ${c.threshold.toFixed(2)} <span class="badge ${c.pass ? "ok" : "bad"}">${c.pass ? "✓ enough" : "too low"}</span></div>`;
 }
 
 function render(t) {
   const factualHit = t.route === "FACTUAL" && t.rule?.matched;
-  const badges = [`<span class="badge ${t.route === "FACTUAL" ? "fact" : "ok"}">${esc(t.route)}</span>`];
-  if (!t.llm.used) badges.push('<span class="badge ok">No LLM used</span>');
-  else badges.push(`<span class="badge ok">Generated by ${esc(LLM_NAME[t.llm.provider] || "LLM")}</span>`);
+  const badges = [`<span class="badge ${t.route === "FACTUAL" ? "fact" : "ok"}">${esc(METHOD[t.route])}</span>`];
+  if (!t.llm.used) badges.push('<span class="badge ok">No AI used</span>');
+  else badges.push(`<span class="badge ok">AI summary · ${esc(LLM_NAME[t.llm.provider] || "AI")}</span>`);
   if (t.llm.fallback && !t.refused) badges.push('<span class="badge warn">Quoted from source</span>');
-  if (t.refused) badges.push('<span class="badge bad">Refused</span>');
+  if (t.refused) badges.push('<span class="badge bad">Not answered</span>');
 
   let html = `<div class="badges">${badges.join("")}</div>` + confRow(t, factualHit);
 
@@ -398,10 +402,11 @@ function render(t) {
     html += `<div class="refused">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
         <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-      <h3>Cannot answer this question</h3>
-      <p>No document in the corpus covers: <b>${esc(c.missing.join(", "))}</b></p>
-      <p>Confidence ${c.value.toFixed(2)} is below the ${c.threshold.toFixed(2)} threshold, so the question was refused <b>before any LLM call</b>.</p>
-      <p class="next">What to do next: ask the owning department directly, or ask a records officer to add the relevant circular to the corpus.</p>
+      <h3>We couldn't find an answer to this question</h3>
+      <p>No document in the system covers: <b>${esc(c.missing.join(", "))}</b></p>
+      <p>This isn't a guess: WAWASAN only answers from its documents, and none of them matched closely enough
+        (confidence ${c.value.toFixed(2)}, minimum ${c.threshold.toFixed(2)}). If this policy exists, it may not be in the system yet.</p>
+      <p class="next">What to do: ask the department that owns this policy, or ask a records officer to add the relevant document.</p>
     </div>`;
   } else if (t.source) {
     const s = t.source;
@@ -413,7 +418,7 @@ function render(t) {
         <div class="t">${esc(s.title)} ${kind}</div>
         <div>${meta}</div>
         ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
-        ${factualHit ? "<div>Answered from the structured rule table, sourced from this circular.</div>" : ""}
+        ${factualHit ? "<div>Exact value from the policy lookup table, taken from this circular.</div>" : ""}
       </div></div>`;
     if (s.supersedes) {
       const prev = t.rule?.previous;
@@ -428,8 +433,10 @@ function render(t) {
   $("#answer").innerHTML = html;
 
   if (!t.retrieval.length) {
-    $("#hits").innerHTML = `<p class="empty">${factualHit ? "✓ The rule engine answered deterministically, so no document retrieval was needed." : "No document matched."}</p>`;
+    $("#srcCount").textContent = factualHit ? "(none needed)" : "(0)";
+    $("#hits").innerHTML = `<p class="empty">${factualHit ? "✓ Answered by the policy lookup, so no document search was needed." : "No document matched."}</p>`;
   } else {
+    $("#srcCount").textContent = `(${t.retrieval.length})`;
     $("#hits").innerHTML = '<ul class="cards">' + t.retrieval.map((h, i) => {
       const chosen = !t.refused && t.source && h.id === t.source.id;
       const cls = h.superseded_by ? "old" : chosen ? "chosen" : "";
@@ -438,7 +445,7 @@ function render(t) {
         (h.superseded_by ? `<span class="tag old">Outdated · replaced by ${esc(h.superseded_by)}</span>` : "") +
         (chosen ? '<span class="tag src">✓ Used as source</span>' : "");
       return `<li class="${cls}"><div class="top"><span class="rank">#${i + 1}</span><span class="id">${esc(h.id)}</span>${tags}
-          <span class="score" title="BM25 relevance score (not a probability)">${h.score.toFixed(2)}</span></div>
+          <span class="score" title="Relevance score (BM25). Higher is more relevant; it is not a probability.">${h.score.toFixed(2)}</span></div>
         <div class="ttl">${esc(h.title)}</div>
         <div class="bar" style="width:calc(${Math.max(4, h.relative * 100)}% - 29px)"></div></li>`;
     }).join("") + "</ul>";
@@ -446,7 +453,7 @@ function render(t) {
 
   const c = t.confidence;
   if (factualHit) {
-    $("#conf").innerHTML = '<p class="empty">Exact rule match: confidence is 1.00 by construction.</p>';
+    $("#conf").innerHTML = '<p class="empty">Exact match in the policy lookup table, so confidence is 1.00.</p>';
   } else if (c) {
     $("#conf").innerHTML = `<p class="empty">${esc(c.note)}: ${c.matched.length} of ${c.matched.length + c.missing.length}.</p>
       <div class="chips">${c.matched.map((w) => `<span class="y">✓ ${esc(w)}</span>`).join("")}${c.missing.map((w) => `<span class="n">${esc(w)}</span>`).join("")}</div>`;
@@ -461,7 +468,7 @@ async function loadAudit() {
     $("#summary").innerHTML = `<div><b>${summary.total}</b>queries</div><div><b>${summary.answered}</b>answered</div><div><b>${summary.refused}</b>refused</div>`;
     $("#audit").innerHTML = rows.map((r) => `<tr><td class="num">${r.id}</td><td class="num">${esc((r.ts || "").slice(11, 19))}</td>
       <td>${esc(r.query)}</td>
-      <td><span class="badge ${r.route === "FACTUAL" ? "fact" : "ok"}">${esc(r.route)}</span></td>
+      <td><span class="badge ${r.route === "FACTUAL" ? "fact" : "ok"}">${esc(METHOD[r.route] || r.route)}</span></td>
       <td>${esc(r.source || "—")}</td>
       <td class="num ${r.confidence == null ? "" : confClass(r.confidence)}">${r.confidence == null ? "" : Number(r.confidence).toFixed(2)}</td>
       <td><a href="/?q=${encodeURIComponent(r.query)}" title="Run this query again">↗</a></td></tr>`).join("");
@@ -470,7 +477,7 @@ async function loadAudit() {
 
 function renderStatus() {
   if (!STATUS) return;
-  const llm = STATUS.llm ? LLM_NAME[STATUS.llm] : "No LLM · quoting sources";
+  const llm = STATUS.llm ? `AI: ${LLM_NAME[STATUS.llm]}` : "No AI · quoting sources";
   const c = STATUS.corpora;
   const what = corpus === "library"
     ? `${c.library.documents} research files · ${c.library.passages} passages`
@@ -485,7 +492,8 @@ async function loadStatus() {
 
 loadStatus();
 loadAudit();
-const deepLink = new URLSearchParams(location.search).get("q");
+if (params.has("expand")) document.querySelectorAll("details.fold").forEach((d) => d.open = true);
+const deepLink = params.get("q");
 if (deepLink) { $("#q").value = deepLink; run(deepLink); }
 </script>
 </body>
