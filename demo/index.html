@@ -180,6 +180,95 @@ td a { color: var(--muted); text-decoration: none; } td a:hover { color: var(--a
 footer { margin-top: 18px; font-size: 13px; color: var(--muted); }
 footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 
+/* ---- WizardZ-style theme: strictly white, black and one electric lime. No shadows. ---- */
+:root, :root:not([x]) {
+  --white: #ffffff; --black: #0b0b0b; --lime: #c6ff3d;
+  --bg: var(--white); --panel: var(--white); --ink: var(--black); --muted: rgba(11, 11, 11, .62); --line: var(--black);
+  --accent: var(--black); --accent-soft: var(--lime); --fact: var(--white); --fact-soft: var(--black);
+  --bad: var(--black); --bad-soft: var(--lime); --warn: var(--black); --warn-soft: var(--white); --idle: var(--white);
+}
+body { background: var(--white); color: var(--black); border-top: 6px solid var(--lime); }
+* { box-shadow: none !important; }
+.panel, .fold { border: 1.5px solid var(--black); border-radius: 18px; }
+h2 { display: inline-block; background: var(--lime); color: var(--black); border: 1.5px solid var(--black);
+  border-radius: 99px; padding: 4px 12px; font-size: 11px; letter-spacing: 1.2px; }
+.hero { background: var(--black); color: var(--white); border-radius: 22px; padding: 30px 28px; position: relative; overflow: hidden; }
+.hero h1 { color: var(--white); font-size: 34px; line-height: 1.15; max-width: 720px; letter-spacing: -.5px; }
+.hero .tagline { color: rgba(255, 255, 255, .78); max-width: 640px; font-size: 16px; }
+.hero .brand svg { color: var(--lime); }
+.hero .wordmark { color: var(--lime); font-weight: 800; letter-spacing: 2px; font-size: 13px; }
+.hero .status { background: var(--black); color: var(--white); border-color: var(--lime); }
+.hero .status i { background: var(--lime); }
+.hero svg.deco { position: absolute; right: -40px; bottom: -50px; width: 260px; height: 260px; pointer-events: none; }
+input[type=text] { background: var(--white); border: 1.5px solid var(--black); }
+input[type=text]:focus { outline: 3px solid var(--lime); border-color: var(--black); }
+.ask { background: var(--lime); color: var(--black); border: 1.5px solid var(--black); }
+kbd { background: var(--black); color: var(--lime); }
+.topics span { border-color: var(--black); }
+.node { background: var(--white); border: 1.5px solid var(--black); }
+.node[data-s=done] { background: var(--lime); border-color: var(--black); }
+.node[data-s=fact], .node[data-s=block] { background: var(--black); color: var(--white); }
+.node[data-s=fact] .cap, .node[data-s=block] .cap, .node[data-s=fact] .lane, .node[data-s=block] .lane { color: rgba(255, 255, 255, .75); }
+.node[data-s=warn] { background: var(--white); border: 1.5px dashed var(--black); }
+.node[data-s=skip] { border: 1.5px dashed var(--black); }
+#n-rule .lane, #n-retrieve .lane { color: var(--muted); }
+.badge { background: var(--white); color: var(--black); border: 1.5px solid var(--black); }
+.badge.ok, .badge.fact { background: var(--lime); }
+.badge.bad { background: var(--black); color: var(--lime); }
+.meter { background: var(--white); border: 1.5px solid var(--black); }
+.meter i { background: var(--black); } .meter i.low { background: repeating-linear-gradient(45deg, var(--black) 0 4px, var(--white) 4px 8px); }
+.meter b { background: var(--lime); width: 4px; border: 1px solid var(--black); }
+.refused { background: var(--black); color: var(--white); border: 0; }
+.refused h3, .refused .icon { color: var(--lime); }
+.refused .next { color: rgba(255, 255, 255, .7); }
+.banner { background: var(--white); border: 1.5px solid var(--black); }
+.banner .h, .ba .arrow { color: var(--black); }
+.cards li { border: 1.5px solid var(--black); }
+.cards li.chosen { background: var(--lime); }
+.tag { background: var(--white); color: var(--black); border: 1px solid var(--black); }
+.tag.int { background: var(--black); color: var(--white); }
+.tag.src { background: var(--black); color: var(--lime); }
+.chips .y { background: var(--lime); color: var(--black); }
+.chips .n { background: var(--black); color: var(--white); }
+.c-hi, .c-mid, .c-lo { color: var(--black); } .c-lo { text-decoration: underline wavy; }
+.vbody { background: var(--white); border: 1.5px solid var(--black); }
+.psg.hl { background: var(--lime); border-left-color: var(--black); }
+#vraw, td a:hover, .fold summary:hover { color: var(--black); text-decoration: underline; }
+.cite .n, .answer sup { color: var(--black); background: var(--lime); padding: 0 4px; border-radius: 4px; }
+
+dialog#viewer { width: min(900px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 1.5px solid var(--black);
+  border-radius: 18px; padding: 20px; background: var(--white); color: var(--black); }
+dialog#viewer::backdrop { background: rgba(11, 11, 11, .7); }
+dialog#viewer .vbody { max-height: calc(100vh - 260px); }
+.vactions { display: flex; gap: 10px; align-items: center; }
+.vactions a { color: var(--black); font-size: 13px; font-weight: 650; border: 1.5px solid var(--black); border-radius: 99px; padding: 4px 12px; text-decoration: none; }
+.vactions a:first-child { background: var(--lime); }
+#vclose { background: var(--black); color: var(--white); border: 0; border-radius: 99px; width: 30px; height: 30px; }
+.filebtn { margin-top: 10px; display: inline-flex; gap: 8px; align-items: center; background: var(--lime); color: var(--black);
+  border: 1.5px solid var(--black); border-radius: 99px; padding: 7px 14px; font-weight: 650; font-size: 13px; max-width: 100%; }
+.filebtn code { font-size: 12px; overflow-wrap: anywhere; }
+/* Scenario + capability card grids: alternating black / white */
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.tile { position: relative; overflow: hidden; border: 1.5px solid var(--black); border-radius: 18px; padding: 18px 18px 64px;
+  background: var(--white); color: var(--black); min-height: 180px; text-align: left; font: inherit; }
+.tile:nth-child(even) { background: var(--black); color: var(--white); }
+.tile .pill { display: inline-block; background: var(--lime); color: var(--black); border: 1.5px solid var(--black);
+  border-radius: 99px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+.tile:nth-child(even) .pill { border-color: var(--lime); }
+.tile .pill.off { background: transparent; color: inherit; border-color: currentColor; }
+.tile h3 { margin: 12px 0 6px; font-size: 18px; letter-spacing: -.2px; }
+.tile p { margin: 0; font-size: 13.5px; opacity: .8; max-width: 92%; }
+.tile svg { position: absolute; right: -14px; bottom: -14px; width: 92px; height: 92px; }
+button.tile { cursor: pointer; }
+button.tile:hover, button.tile:focus-visible { outline: 3px solid var(--lime); outline-offset: 2px; }
+.tile kbd { position: absolute; top: 16px; right: 16px; }
+.cta { background: var(--black); color: var(--white); border-radius: 22px; padding: 26px 28px; display: flex; gap: 20px;
+  align-items: center; justify-content: space-between; flex-wrap: wrap; position: relative; overflow: hidden; }
+.cta h3 { margin: 10px 0 6px; font-size: 24px; } .cta p { margin: 0; opacity: .8; max-width: 640px; }
+
+@media (max-width: 960px) { .grid4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .grid4 { grid-template-columns: 1fr; } .hero h1 { font-size: 26px; } }
+
 @media (max-width: 760px) {
   .pipe { grid-template-columns: 1fr; }
   .pipe .node { grid-column: 1 !important; grid-row: auto !important; }
@@ -191,39 +280,51 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
 </head>
 <body>
 <main>
-  <header>
-    <div>
-      <div class="brand">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>
-        </svg>
-        <h1>WAWASAN</h1>
+  <header class="hero">
+    <div style="position:relative; z-index:1">
+      <div class="brand" style="justify-content:space-between; flex-wrap:wrap; gap:10px">
+        <span class="wordmark">WAWASAN · MAYAO LABS</span>
+        <span class="status" id="status"><i></i>Connecting…</span>
       </div>
-      <p class="tagline">Ask a question and get an answer quoted from real documents, with the exact source file shown so you can check it.</p>
+      <h1 style="margin-top:18px">Ask a question. Get the answer, and the file it came from.</h1>
+      <p class="tagline">Every answer is quoted from a real document and opens the source file so you can check it yourself.
+        Demo library: the team's research notes on government document management.</p>
     </div>
-    <span class="status" id="status"><i></i>Connecting…</span>
+    <svg class="deco" viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="120" cy="110" r="70" fill="#c6ff3d"/><rect x="40" y="40" width="70" height="70" fill="none" stroke="#fff" stroke-width="3"/>
+      <polygon points="150,30 190,100 110,100" fill="#fff"/>
+    </svg>
   </header>
 
   <section class="panel">
-    <label class="ask-label" for="q">What do you need to know?</label>
+    <h2>Ask</h2>
+    <label class="ask-label" for="q" style="margin-top:12px">What do you need to know?</label>
     <form id="f">
       <input id="q" type="text" autocomplete="off" placeholder="e.g. How do I apply for annual leave?">
       <button class="ask" id="askbtn" type="submit"><span class="spin" aria-hidden="true"></span><span id="asktext">Ask</span></button>
     </form>
     <div class="topics" id="topics"></div>
-    <div class="presets" id="presets" aria-label="Example questions (keys 1 to 5)"></div>
   </section>
 
-  <section class="panel"><h2>Answer</h2><div id="answer"></div></section>
+  <section>
+    <h2>Scenarios</h2>
+    <div class="grid4" id="presets" style="margin-top:12px" aria-label="Example questions (keys 1 to 4)"></div>
+  </section>
 
-  <section class="panel" id="viewer" hidden>
+  <section class="panel"><h2>Answer</h2><div id="answer" style="margin-top:12px"></div></section>
+
+  <dialog id="viewer" aria-labelledby="vtitle">
     <div class="vhead">
-      <div><h2 style="margin:0">Source document</h2><div class="vtitle" id="vtitle"></div><div class="vfile" id="vfile"></div></div>
-      <a id="vraw" target="_blank" rel="noopener">Open original file ↗</a>
+      <div><h2 style="margin:0">Source file</h2><div class="vtitle" id="vtitle"></div><div class="vfile" id="vfile"></div></div>
+      <div class="vactions">
+        <a id="vraw" target="_blank" rel="noopener">Open original ↗</a>
+        <a id="vdl" download>Download</a>
+        <button type="button" id="vclose" aria-label="Close">✕</button>
+      </div>
     </div>
     <p class="empty" style="margin:8px 0 10px">The full text the system searched. The highlighted passage is the one the answer came from.</p>
     <div class="vbody" id="vbody"></div>
-  </section>
+  </dialog>
 
   <details class="panel fold" id="d-sources">
     <summary>Sources checked <span class="count" id="srcCount"></span></summary>
@@ -257,6 +358,30 @@ footer code { background: var(--idle); padding: 1px 5px; border-radius: 4px; }
       <tbody id="audit"></tbody></table></div>
     </div>
   </details>
+
+  <section>
+    <h2>Capabilities</h2>
+    <div class="grid4" style="margin-top:12px">
+      <div class="tile"><span class="pill">Live in demo</span><h3>Document search</h3>
+        <p>Finds the passage that answers your question and quotes it word for word, from a real file.</p>
+        <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="60" cy="60" r="40" fill="#c6ff3d"/><circle cx="60" cy="60" r="16" fill="#0b0b0b"/></svg></div>
+      <div class="tile"><span class="pill">Live in demo</span><h3>Refuses when unsure</h3>
+        <p>If no document covers the question, it says so instead of guessing, before any AI is used.</p>
+        <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="25" y="25" width="70" height="70" fill="#c6ff3d"/><rect x="45" y="45" width="30" height="30" fill="#0b0b0b"/></svg></div>
+      <div class="tile"><span class="pill">Live in demo</span><h3>Source file + audit trail</h3>
+        <p>Every answer opens its source file, and every question is logged: who asked, what, from which file.</p>
+        <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="60,15 100,95 20,95" fill="#c6ff3d"/><polygon points="60,50 78,88 42,88" fill="#0b0b0b"/></svg></div>
+      <div class="tile"><span class="pill off">In deployment</span><h3>Policy lookup · version-aware</h3>
+        <p>Exact values and "which circular is current", filled from an agency's verified circulars. Not shown with invented data.</p>
+        <svg viewBox="0 0 100 100" aria-hidden="true"><rect x="20" y="40" width="80" height="60" fill="#c6ff3d"/><rect x="40" y="20" width="60" height="40" fill="none" stroke="#fff" stroke-width="4"/></svg></div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div style="position:relative; z-index:1"><span style="background:#c6ff3d; color:#0b0b0b; border-radius:99px; padding:2px 10px; font-size:11px; font-weight:700; letter-spacing:.6px">PILOT</span>
+      <h3>Pilot WAWASAN with one agency</h3>
+      <p>Point it at an agency's verified circulars. On AWS (S3 · Lambda · DynamoDB · Bedrock) a demo costs about US$1 and a one-agency pilot about US$20–35 a month.</p></div>
+  </section>
 
   <footer>
     Running locally with Python stdlib only. Production target on AWS:
@@ -306,7 +431,8 @@ function setCorpus(c) {
   PRESETS.forEach(([label, q], i) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.innerHTML = `<kbd>${i + 1}</kbd>${esc(label)}`;
+    b.className = "tile";
+    b.innerHTML = `<kbd>${i + 1}</kbd><span class="pill">Example ${i + 1}</span><h3>${esc(label)}</h3><p>${esc(q)}</p>`;
     b.title = q;
     b.onclick = () => { $("#q").value = q; run(q); };
     $("#presets").appendChild(b);
@@ -314,7 +440,6 @@ function setCorpus(c) {
   $("#q").placeholder = PLACEHOLDER[c];
   $("#topics").innerHTML = "Topics: " + TOPICS[c].map((t) => `<span>${esc(t)}</span>`).join("");
   $("#answer").innerHTML = START[c];
-  $("#viewer").hidden = true;
   $("#srcCount").textContent = "";
   $("#hits").innerHTML = '<p class="empty">The documents searched for your question will appear here.</p>';
   $("#conf").innerHTML = '<p class="empty">Which words of your question were found in the source will appear here.</p>';
@@ -424,7 +549,7 @@ function render(t) {
       <div class="cite"><span class="n">[1]</span><div>
         <div class="t">${esc(s.title)} ${kind}</div>
         <div>${meta}</div>
-        <div class="file" data-file="${esc(s.file)}" data-id="${esc(s.id)}" title="Show this file below">📄 ${esc(s.file)}</div>
+        <button type="button" class="filebtn" data-file="${esc(s.file)}" data-id="${esc(s.id)}" data-page="${esc(s.page)}">📄 Open source file <code>${esc(s.file)}</code></button>
         ${s.officer ? `<div>Captured from: ${esc(s.officer)}</div>` : ""}
         ${factualHit ? "<div>Exact value from the policy lookup table, taken from this circular.</div>" : ""}
       </div></div>`;
@@ -439,7 +564,6 @@ function render(t) {
     }
   }
   $("#answer").innerHTML = html;
-  if (t.source && !t.refused) showDoc(t.source.file, t.source.id, t.source.page); else $("#viewer").hidden = true;
 
   if (!t.retrieval.length) {
     $("#srcCount").textContent = factualHit ? "(none needed)" : "(0)";
@@ -505,22 +629,32 @@ async function showDoc(file, highlightId, page) {
   $("#vtitle").textContent = d.title;
   $("#vfile").textContent = d.file;
   $("#vraw").href = "/api/file?path=" + encodeURIComponent(d.file) + (page ? `#page=${page}` : "");
+  $("#vdl").href = "/api/file?path=" + encodeURIComponent(d.file);
+  $("#vdl").setAttribute("download", d.file.split("/").pop());
   $("#vbody").innerHTML = d.passages.map((p) => `<div class="psg ${p.id === highlightId ? "hl" : ""}">` +
     `${p.page ? `<span class="pg">Page ${p.page}</span>` : ""}${esc(p.text)}</div>`).join("");
-  $("#viewer").hidden = false;
+  if (!$("#viewer").open) $("#viewer").showModal();
   const hl = $("#vbody .hl");
   $("#vbody").scrollTop = hl ? hl.offsetTop - 12 : 0;
 }
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-file]");
-  if (el && el.dataset.file) showDoc(el.dataset.file, el.dataset.id);
+  if (el && el.dataset.file) showDoc(el.dataset.file, el.dataset.id, el.dataset.page);
+});
+$("#vclose").onclick = () => $("#viewer").close();
+$("#viewer").addEventListener("click", (e) => { if (e.target === $("#viewer")) $("#viewer").close(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "o" && !e.target.matches("input, textarea") && $(".filebtn")) $(".filebtn").click();
 });
 
 loadStatus();
 loadAudit();
 if (params.has("expand")) document.querySelectorAll("details.fold").forEach((d) => d.open = true);
 const deepLink = params.get("q");
-if (deepLink) { $("#q").value = deepLink; run(deepLink); }
+if (deepLink) {
+  $("#q").value = deepLink;
+  run(deepLink).then(() => { if (params.has("open") && $(".filebtn")) $(".filebtn").click(); });
+}
 </script>
 </body>
 </html>

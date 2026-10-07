@@ -20,6 +20,10 @@ WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a
 
 ![Cited answer with source file](demo/screenshots/1-cited-answer-with-source.png)
 
+**Click "Open source file" and the real file pops up,** with the passage the answer came from highlighted, and buttons to open or download the original:
+
+![Source file pop-up](demo/screenshots/4-source-file-popup.png)
+
 **A question the documents don't cover:** the accuracy check refuses it before any AI is used.
 
 ![Refused question](demo/screenshots/2-refused-question.png)
