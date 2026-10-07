@@ -26,6 +26,7 @@ RULES = []
 # PDFs under research/ are skipped because they are generated copies of the notes.
 LIBRARY_SOURCES = [(ROOT.parent / "research", {".md"}), (ROOT / "library", {".md", ".txt", ".pdf"})]
 CHUNK_WORDS = 180
+MIN_CHUNK_WORDS = 60
 DB_PATH = ROOT / "audit.db"
 # ponytail: lexical confidence gate. Paraphrases ("approves" vs "approval") cause false refusals,
 # which is the safer failure for policy answers; add embedding similarity once retrieval goes hybrid.
@@ -75,7 +76,19 @@ def chunk(text, limit=CHUNK_WORDS):
         words += n
     if cur:
         chunks.append("\n\n".join(cur))
-    return [c for c in chunks if len(c.split()) >= 5]
+    # A tiny passage (a paper's title/author block) carries matching words but no content, so it would win
+    # retrieval and hand the AI nothing to answer from. Fold it into the passage that follows.
+    merged = []
+    for c in chunks:
+        if merged and len(merged[-1].split()) < MIN_CHUNK_WORDS:
+            merged[-1] += "\n\n" + c
+        else:
+            merged.append(c)
+    if len(merged) > 1 and len(merged[-1].split()) < MIN_CHUNK_WORDS:  # same for a small trailing passage
+        tail = merged.pop()
+        merged[-1] += "\n\n" + tail
+    # Scraps like a lone figure caption carry the paper's title words but nothing to answer from.
+    return [c for c in merged if len(c.split()) >= 20]
 
 
 def read_pages(path):
@@ -91,6 +104,21 @@ def read_pages(path):
     return [(None, clean_markdown(text) if path.suffix.lower() == ".md" else text)]
 
 
+def pdf_title(path):
+    """Embedded title metadata if it is real, else the first title-like line of page 1."""
+    info = subprocess.run(["pdfinfo", str(path)], capture_output=True, text=True, timeout=30).stdout
+    meta = re.search(r"^Title:\s*(.+)$", info, re.M)
+    if meta and len(meta.group(1).strip()) > 12 and "paper title" not in meta.group(1).lower():
+        return meta.group(1).strip()
+    page1 = subprocess.run(["pdftotext", "-l", "1", "-enc", "UTF-8", str(path), "-"],
+                           capture_output=True, text=True, timeout=60).stdout
+    skip = re.compile(r"arxiv|volume|issue|journal|issn|https?://|doi|©|copyright", re.I)
+    for line in (l.strip() for l in page1.splitlines()):
+        if len(line.split()) >= 4 and not skip.search(line):
+            return line.rstrip(":")
+    return None
+
+
 def load_library():
     files = sorted(p for folder, exts in LIBRARY_SOURCES if folder.exists()
                    for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in exts)
@@ -98,9 +126,12 @@ def load_library():
     for path in files:
         raw = path.read_text(errors="replace") if path.suffix.lower() == ".md" else ""
         heading = re.search(r"^#\s+(.+)$", raw, re.M)
-        title = heading.group(1).strip() if heading else path.stem.replace("-", " ").replace("_", " ")
+        title = (heading.group(1).strip() if heading
+                 else pdf_title(path) if path.suffix.lower() == ".pdf"
+                 else None) or path.stem.replace("-", " ").replace("_", " ")
         rel = path.relative_to(ROOT.parent).as_posix()
-        source = "Mayao Labs research notes" if rel.startswith("research/") else "Document library"
+        source = ("Mayao Labs research notes" if rel.startswith("research/")
+                  else "Published paper (PDF)" if path.suffix.lower() == ".pdf" else "Document library")
         n = 0
         for page, text in read_pages(path):
             for body in chunk(text):
@@ -155,6 +186,7 @@ def _bedrock(prompt):
 
 def _openai_compatible(provider, prompt):
     env, url, default_model = OPENAI_COMPATIBLE[provider]
+    url = os.environ.get("LLM_BASE_URL", url)  # any OpenAI-compatible endpoint, e.g. a self-hosted model
     key = os.environ[env]
     body = json.dumps({
         "model": os.environ.get("LLM_MODEL", default_model),
@@ -402,12 +434,13 @@ def selftest():
     assert all((ROOT.parent / d["file"]).is_file() for d in lib), "every citation must point at a real file"
     assert len(lib) > 50, "the library should be chunked into passages"
     assert all(len(c["body"].split()) <= CHUNK_WORDS * 3 for c in lib), "a passage is unreasonably long"
+    assert all(len(c["body"].split()) >= 20 for c in lib), "scraps (captions, title blocks) must not be passages"
 
     assert classify("What is the maximum number of failure points?")[0] == "FACTUAL"
     assert classify("Why is DDMS adoption in Malaysia still low?")[0] == "INTERPRETIVE"
 
     _, top = best_current(bm25("What are the failure points of RAG systems?", lib))
-    assert top["id"].startswith("03-seven-failure-points"), top["id"]
+    assert "seven-failure-points" in top["id"], top["id"]  # the note or the Barnett et al. paper itself
 
     q = "What is the work-from-home policy?"
     assert coverage(q, best_current(bm25(q, lib))[1], lib)[0] < THRESHOLD, "common words must not pass the gate"

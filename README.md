@@ -34,11 +34,26 @@ WAWASAN is an internal knowledge assistant for Sarawak civil servants. You ask a
 
 ## What it searches
 
-The 18 research notes in [`research/`](research/). Each one summarises a published study or report and cites it (for example Barnett et al. 2024, *Seven Failure Points When Engineering a RAG System*, arXiv). Long documents are split into ~180-word passages, so every answer points to an exact passage, not a whole paper. Any **PDF dropped into `demo/library/`** is indexed on the next restart, with page-level citations (text extracted by `pdftotext` from poppler-utils).
+**8 published research papers** (77 pages) and the **team's 18 research notes** in [`research/`](research/) that summarise and cite them:
 
-Example questions: *What are the failure points of RAG systems?* · *Why is DDMS adoption in Malaysia still low?* · *What records management problems did Sarawak agencies have?* · *What is the work-from-home policy?* (refused: no document covers it)
+| Paper | Source |
+|---|---|
+| Barnett et al. 2024, *Seven Failure Points When Engineering a Retrieval Augmented Generation System* | arXiv 2401.05856 |
+| *Retrieval-Augmented Generation for Domain-Specific Question Answering* (Pittsburgh and CMU) | arXiv 2411.13691 |
+| *Chunking, Retrieval, and Re-ranking: An Empirical Evaluation of RAG Architectures for Policy* | arXiv 2601.15457 |
+| Mathur et al. 2026, *Retrieval Improvements Do Not Guarantee Better Answers: A Study of RAG for AI Policy QA* | arXiv 2603.24580 |
+| Baldwin 2026, *Knowledge Graph Representations for LLM-Based Policy Compliance Reasoning* | arXiv 2604.27713 |
+| Pingili 2025, *AI-driven intelligent document processing in government and public administration* | WJAETS |
+| Melzer et al., *Federated Information Retrieval in Cross-Domain Information Systems* | CEUR-WS Vol. 3580 |
+| Orji et al. 2024, *A Knowledg Graph Model for e-Government* [sic] | IJISRT |
 
-**Every answer works with no AI at all.** Without an LLM, the answer is the best-matching passage quoted word for word. The self-test checks that a quoted answer appears verbatim in the cited passage. An LLM, if connected, only rewrites that passage into a summary.
+The PDFs are **downloaded from their publishers, not committed**, to respect their licences. Fetch them once with `sh demo/fetch_papers.sh`. Without them, the demo still runs on the research notes.
+
+Documents are split into passages of roughly 60–180 words, page by page for PDFs. Every answer therefore points to an exact passage and page, not a whole paper. Title blocks and figure captions are folded into real text, so a passage is never just a paper's title. Any other PDF dropped into `demo/library/` is indexed on the next restart (text extracted by `pdftotext` from poppler-utils).
+
+Example questions: *What are the failure points of RAG systems?* (answered from the Barnett et al. paper) · *Does better retrieval guarantee better answers?* (answered from the Conclusion of Mathur et al.) · *Why is DDMS adoption in Malaysia still low?* · *What is the work-from-home policy?* (refused: no document covers it)
+
+**Every answer works with no AI at all.** Without an LLM, the answer is the best-matching passage quoted word for word, and the self-test checks that it appears verbatim in the cited passage. With an LLM connected, the answer card shows the AI's summary **beside the only passage the AI was given**, so anyone can check it added nothing.
 
 ## How it works
 
@@ -68,11 +83,13 @@ Optional LLM answer generation with Amazon Bedrock, DeepSeek or Groq's free tier
 # Amazon Bedrock: needs AWS CLI credentials and model access enabled for Claude Haiku 4.5
 LLM_PROVIDER=bedrock AWS_REGION=ap-southeast-1 python3 demo/app.py
 
-# DeepSeek
+# DeepSeek (or put the key in demo/.env, copied from demo/.env.example; it is git-ignored)
 DEEPSEEK_API_KEY=your_key python3 demo/app.py
 
 # Groq free tier (no credit card)
 GROQ_API_KEY=your_key python3 demo/app.py
+
+# Any OpenAI-compatible endpoint (e.g. a self-hosted model): add LLM_BASE_URL=<url>/chat/completions
 ```
 
 See [Connecting Amazon Bedrock](#connecting-amazon-bedrock) for the full setup.

@@ -1,3 +1,4 @@
 demo/audit.db
 __pycache__/
 .env
+demo/library/*.pdf

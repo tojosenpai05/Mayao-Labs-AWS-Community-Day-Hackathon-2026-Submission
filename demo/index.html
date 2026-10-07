@@ -296,7 +296,7 @@ button.tile:hover, button.tile:focus-visible { outline: 3px solid var(--lime); o
       </div>
       <h1 style="margin-top:18px">Ask a question. Get the answer, and the file it came from.</h1>
       <p class="tagline">Every answer comes from a real document, quoted word for word or summarised by AI from that passage only, and opens the source file so you can check it yourself.
-        Demo library: the team's research notes on government document management.</p>
+        Demo library: 8 published research papers plus the team's research notes on government document management.</p>
     </div>
     <svg class="deco" viewBox="0 0 200 200" aria-hidden="true">
       <circle cx="120" cy="110" r="70" fill="#c6ff3d"/><rect x="40" y="40" width="70" height="70" fill="none" stroke="#f4f2ec" stroke-width="3"/>
@@ -402,12 +402,12 @@ const PRESET_SETS = {
   library: [
     ["RAG failure points", "What are the failure points of RAG systems?"],
     ["Malaysia adoption gap", "Why is DDMS adoption in Malaysia still low?"],
-    ["Sarawak records", "What records management problems did Sarawak agencies have?"],
+    ["From a published paper", "Does better retrieval guarantee better answers?"],
     ["Question we can't answer", "What is the work-from-home policy?"],
   ],
 };
 const TOPICS = {
-  library: ["Knowledge management", "AI search (RAG)", "Malaysia e-government", "Sarawak records"],
+  library: ["Published papers (8)", "Knowledge management", "AI search (RAG)", "Malaysia e-government", "Sarawak records"],
 };
 const METHOD = { FACTUAL: "Policy lookup", INTERPRETIVE: "Document search" };
 const PLACEHOLDER = { library: "e.g. Why do RAG systems fail on government documents?" };
@@ -421,7 +421,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const STAGES = ["query", "classify", "rule", "retrieve", "gate", "llm", "answer", "audit"];
 const LLM_NAME = { bedrock: "Bedrock", deepseek: "DeepSeek", groq: "Groq" };
 const START = {
-  library: `<p class="empty">Every answer is quoted from a real file in this project, and the file is shown so you can check it.
+  library: `<p class="empty">Searches 8 published research papers (page by page) and the team's research notes. Every answer opens its real source file so you can check it.
     Pick an example (keys <kbd>1</kbd>–<kbd>4</kbd>), or drop PDFs into <code>demo/library/</code> and restart to include them.</p>`,
 };
 
