@@ -23,6 +23,9 @@ from that database sounds good too) -> solves PFs 1, 2, 3, partial 6
 
     - how does out-of-corpus detection work? is it proven to work well?
 
+    - is having a knowledge graph significantly better for query to response 
+      latency? having a slow service will reduce adoption 
+
 PF 4 is a challenge that would ideally be addressed, is it even possible to
 solve this without something BCI related? maybe consider integrating SOL-03?
 
